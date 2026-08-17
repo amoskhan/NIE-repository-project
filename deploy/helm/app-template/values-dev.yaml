@@ -1,0 +1,59 @@
+# Development environment. Merged on top of values.yaml.
+appKey: apptemplate
+environment: dev
+hostingMode: path
+hostName: apps.dev.example.com
+pathPrefix: MYAPP
+runtimeSecretName: runtime-config
+
+# Argo Rollouts CRDs are optional — see values.yaml.
+rollouts:
+  enabled: false
+
+workloads:
+  api:
+    image:
+      repository: registry.example.com/app-template/api
+      tag: latest
+    containerPort: 8080
+    servicePort: 80
+    healthPath: /health
+    ingressEnabled: true
+    pathSegment: api-main
+    strategy: RollingUpdate
+    replicas: 1
+    # Requests are what the HPA measures utilisation against — an HPA with no
+    # requests reports <unknown> and never scales.
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        memory: 512Mi
+    hpa:
+      minReplicas: 1
+      maxReplicas: 3
+      cpuUtilization: 70
+      memoryUtilization: 75
+  auth-api:
+    image:
+      repository: registry.example.com/app-template/auth-api
+      tag: latest
+    containerPort: 8080
+    servicePort: 80
+    healthPath: /health
+    ingressEnabled: true
+    pathSegment: api-auth
+    strategy: RollingUpdate
+    replicas: 1
+    resources:
+      requests:
+        cpu: 50m
+        memory: 128Mi
+      limits:
+        memory: 256Mi
+    hpa:
+      minReplicas: 1
+      maxReplicas: 3
+      cpuUtilization: 70
+      memoryUtilization: 75

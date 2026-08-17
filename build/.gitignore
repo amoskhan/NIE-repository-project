@@ -1,0 +1,7 @@
+# The repo-root .gitignore ignores `.env.*` wholesale, which would swallow the
+# checked-in template below. A .gitignore deeper in the tree wins, so this
+# single negation is what keeps `build/.env.example` under version control.
+#
+# `build/.env` itself stays ignored (root rule `.env`) — it holds real
+# credentials. Copy, do not commit:  cp build/.env.example build/.env
+!.env.example

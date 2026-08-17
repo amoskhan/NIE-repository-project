@@ -1,0 +1,44 @@
+# Machine-readable summary of the app-shell-navigation dossier.
+# See .ai/features/_MANIFEST-SCHEMA.md for the schema.
+name: app-shell-navigation
+title: App Shell & Navigation
+category: frontend
+status: released
+description: |
+  The staff-facing shell (sidebar, topbar, notifications, profile menu) and its
+  data-driven navigation. The shell components are template-owned and inherited by
+  copy-paste; the menu items, routes, access-function codes, role labels, and brand
+  live in the project-owned src/frontend/main/src/app-config/* files, which are the
+  only place a derived project edits to change navigation or branding.
+
+copierFlag: null
+relatedTasks: []
+dependsOn: ["ui-component-library", "authorization-access-functions"]
+removableInDerivedRepo: false
+removalTaskId: null
+
+files:
+  - path: "src/frontend/main/src/staff/layouts/StaffLayout.vue"
+    role: shell-layout
+  - path: "src/frontend/main/src/composables/useSidebar.ts"
+    role: shell-state
+  - path: "src/frontend/main/src/composables/usePermissions.ts"
+    role: nav-filter
+  - path: "src/frontend/main/src/composables/navTypes.ts"
+    role: types
+  - path: "src/frontend/main/src/router/index.ts"
+    role: router
+  - path: "src/frontend/main/src/constants/permissions.ts"
+    role: resolver
+  - path: "src/frontend/main/src/app-config/navigation.ts"
+    role: project-config
+  - path: "src/frontend/main/src/app-config/routes.ts"
+    role: project-config
+  - path: "src/frontend/main/src/app-config/accessFunctions.ts"
+    role: project-config
+  - path: "src/frontend/main/src/app-config/branding.ts"
+    role: project-config
+
+tags: [shell, sidebar, navigation, routing, branding, copy-paste-inheritance]
+owners:
+  - "group:platform"

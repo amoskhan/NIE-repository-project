@@ -1,0 +1,46 @@
+{{/*
+One Ingress per workload with `ingressEnabled: true`.
+
+Paths are built from the base path (see the `app-template.basePath` helper) plus
+the workload's `pathSegment`, and must line up with the `MYAPP` locations in
+build/nginx.conf:  https://<hostName>/<pathPrefix>/<pathSegment>/...
+
+The `(/|$)(.*)` capture plus `rewrite-target: /$2` strips the prefix before the
+request reaches the service, so the .NET apps keep serving from their own root.
+*/}}
+{{- $basePath := include "app-template.basePath" . -}}
+{{- range $name, $workload := .Values.workloads }}
+{{- if $workload.ingressEnabled }}
+{{- $serviceName := include "app-template.serviceName" (list $ $name) }}
+{{- $targetService := and $.Values.rollouts.enabled (eq $workload.strategy "BlueGreen") | ternary (printf "%s-active" $serviceName) $serviceName }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ $serviceName }}
+  labels:
+    {{- include "app-template.selectorLabels" (list $ $name) | nindent 4 }}
+  annotations:
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: {{ $.Values.ingress.proxyBodySize | quote }}
+    nginx.ingress.kubernetes.io/proxy-read-timeout: {{ $.Values.ingress.proxyReadTimeout | quote }}
+    nginx.ingress.kubernetes.io/proxy-send-timeout: {{ $.Values.ingress.proxySendTimeout | quote }}
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: {{ $.Values.ingress.proxyConnectTimeout | quote }}
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+spec:
+  {{- with $.Values.ingress.className }}
+  ingressClassName: {{ . }}
+  {{- end }}
+  rules:
+    - host: {{ $.Values.hostName }}
+      http:
+        paths:
+          - path: {{ printf "%s/%s(/|$)(.*)" $basePath $workload.pathSegment }}
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: {{ $targetService }}
+                port:
+                  number: {{ $workload.servicePort }}
+---
+{{- end }}
+{{- end }}

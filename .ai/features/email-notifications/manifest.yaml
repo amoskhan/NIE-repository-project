@@ -1,0 +1,25 @@
+name: email-notifications
+title: Email Notifications
+category: backend
+status: released
+description: "Transactional email via a MailKit-backed EmailService: raw, templated, and base-templated sends over configurable SMTP. SenderEmail is a required per-environment setting; development points at a local SMTP catcher (Mailpit on localhost:1025) so nothing leaves the machine."
+copierFlag: null
+relatedTasks: []
+dependsOn: []
+removableInDerivedRepo: false
+removalTaskId: null
+files:
+  - path: "src/backend/Libraries/Services/Services/Email/IEmailService.cs"
+    role: interface
+  - path: "src/backend/Libraries/Services/Services/Email/EmailService.cs"
+    role: service
+  - path: "src/backend/Libraries/Shared/Models/EmailSettings.cs"
+    role: model
+  - path: "src/backend/API/Templates/BaseTemplate.html"
+    role: owned
+tags:
+  - smtp
+  - mailkit
+  - transactional-email
+owners:
+  - "group:platform"

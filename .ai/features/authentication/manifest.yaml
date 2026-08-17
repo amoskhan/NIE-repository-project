@@ -1,0 +1,63 @@
+name: authentication
+title: Authentication
+category: security
+status: released
+description: "Self-contained local identity provider: credentials in the UserAccounts table hashed with PasswordHasher, self-service registration, password reset and change, lockout, and Development-only demo accounts. Ships an optional external OIDC slot (Google/Microsoft/GitHub) that is disabled and empty. Both paths issue the same Valkey session the Main API validates."
+copierFlag: null
+relatedTasks: []
+dependsOn:
+  - caching-valkey
+removableInDerivedRepo: false
+removalTaskId: null
+files:
+  - path: "src/backend/Auth/Program.cs"
+    role: owned
+  - path: "src/backend/Auth/Controllers/AuthController.cs"
+    role: controller
+  - path: "src/backend/Auth/Services/ILocalIdentityService.cs"
+    role: interface
+  - path: "src/backend/Auth/Services/LocalIdentityService.cs"
+    role: service
+  - path: "src/backend/Auth/Services/IExternalIdpService.cs"
+    role: interface
+  - path: "src/backend/Auth/Services/ExternalIdpService.cs"
+    role: service
+  - path: "src/backend/Auth/Services/IAuthSessionService.cs"
+    role: interface
+  - path: "src/backend/Auth/Services/AuthSessionService.cs"
+    role: service
+  - path: "src/backend/Auth/appsettings.json"
+    role: config
+  - path: "src/backend/Auth/Models/AuthSessionDto.cs"
+    role: model
+  - path: "src/backend/Auth/Models/LoginRequest.cs"
+    role: model
+  - path: "src/backend/Auth/Models/LoginResponse.cs"
+    role: model
+  - path: "src/backend/Auth/Models/IssuedLoginResponse.cs"
+    role: model
+  - path: "src/backend/Auth/Models/LocalIdentityOptions.cs"
+    role: model
+  - path: "src/backend/Auth/Models/LocalIdentityRequests.cs"
+    role: model
+  - path: "src/backend/Auth/Models/ExternalIdpOptions.cs"
+    role: model
+  - path: "src/backend/Auth/Models/ExternalLoginState.cs"
+    role: model
+  - path: "src/backend/Auth/Models/CreateTestSessionRequest.cs"
+    role: model
+  - path: "src/backend/Auth/Models/CreateTestSessionResponse.cs"
+    role: model
+  - path: "src/backend/Libraries/Domain/Models/UserAccount.cs"
+    role: entity
+  - path: "src/backend/API/Middleware/SessionValidationMiddleware.cs"
+    role: middleware
+  - path: "src/frontend/auth/src/components/LoginPage.vue"
+    role: client
+tags:
+  - local-idp
+  - password-hashing
+  - session
+  - oidc-optional
+owners:
+  - "group:platform"

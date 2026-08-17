@@ -1,0 +1,42 @@
+# Chart-wide defaults. Every environment file (values-dev/stg/prd.yaml) is
+# merged ON TOP of this file, so anything you set here is inherited unless the
+# environment overrides it:
+#
+#   helm upgrade --install app-template deploy/helm/app-template \
+#     -f deploy/helm/app-template/values-dev.yaml
+
+# Short name used to build every resource name: <appKey>-<environment>-<workload>.
+appKey: apptemplate
+environment: dev
+
+# `path`  -> the app lives under https://<hostName>/<pathPrefix>/... (shared host)
+# `host`  -> the app owns <hostName> and is served from /
+hostingMode: path
+hostName: apps.dev.example.com
+# Must match the `MYAPP` placeholder you substituted in build/nginx.conf.
+pathPrefix: MYAPP
+
+# Kubernetes Secret holding the runtime configuration. Every workload gets it
+# via `envFrom`, so keys use ASP.NET Core's env-var form, e.g.
+# ConnectionStrings__MainDbConnection, Valkey__ConnectionString.
+runtimeSecretName: runtime-config
+
+ingress:
+  className: nginx
+  proxyBodySize: 100m
+  proxyReadTimeout: "180"
+  proxySendTimeout: "180"
+  proxyConnectTimeout: "60"
+
+# OPTIONAL: Argo Rollouts (https://argoproj.github.io/rollouts/).
+# Leave this false unless the Rollout CRD is installed in your cluster —
+# otherwise `helm install` fails with "no matches for kind Rollout".
+# When false, every workload is rendered as a plain Deployment + Service,
+# whatever `strategy` says.
+rollouts:
+  enabled: false
+
+# Schedule pods onto a specific node pool by adding, per workload:
+#   nodePool: <value of the node's `pool` label>
+# Leave it unset (the default) and no nodeSelector is emitted.
+workloads: {}

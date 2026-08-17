@@ -1,0 +1,38 @@
+name: audit-logging
+title: Audit Logging
+category: backend
+status: released
+description: "Automatic create/update/delete audit capture for TimestampedEntity changes, plus manual IAuditLogger events, with queryable audit history."
+copierFlag: null
+relatedTasks: []
+dependsOn: []
+removableInDerivedRepo: false
+removalTaskId: null
+files:
+  - path: "src/backend/Libraries/Domain/Models/AuditLog.cs"
+    role: model
+  - path: "src/backend/Libraries/Domain/Models/TimestampedEntity.cs"
+    role: model
+  - path: "src/backend/Libraries/Shared/Enum/EAuditAction.cs"
+    role: enum
+  - path: "src/backend/Libraries/Data/Data/MainDbContext.cs"
+    role: owned
+  - path: "src/backend/Libraries/Services/Services/AuditLog/IAuditLogger.cs"
+    role: interface
+  - path: "src/backend/Libraries/Services/Services/AuditLog/AuditLogger.cs"
+    role: owned
+  - path: "src/backend/Libraries/Services/Services/AuditLog/IAuditLogService.cs"
+    role: interface
+  - path: "src/backend/Libraries/Services/Services/AuditLog/AuditLogService.cs"
+    role: service
+  - path: "src/backend/API/Controllers/AuditLogController.cs"
+    role: controller
+  - path: "src/backend/API/Jobs/AuditLogPurgeJob.cs"
+    role: owned
+  - path: "src/frontend/main/src/staff/pages/admin/AuditLog.vue"
+    role: component
+  - path: "src/frontend/main/src/services/auditLogService.ts"
+    role: client
+tags: []
+owners:
+  - "group:platform"

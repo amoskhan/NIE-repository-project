@@ -1,0 +1,46 @@
+{
+  "name": "App Template Dev",
+  "dockerComposeFile": "docker-compose.yml",
+  "service": "app",
+  "workspaceFolder": "/workspace",
+  "features": {
+    "ghcr.io/devcontainers/features/dotnet:3": { "version": "10.0" },
+    "ghcr.io/devcontainers/features/node:2": {
+      "version": "24",
+      "nodeGypDependencies": false
+    },
+    "ghcr.io/devcontainers/features/git:1": {}
+  },
+  // The backing services are sibling containers on the `devnet` network, so
+  // inside this container they answer to their compose service names — not to
+  // `localhost`. These env vars override the matching appsettings.json keys
+  // (ASP.NET Core maps `__` to `:`) so the app runs with no local edits.
+  // Delete an entry if you want the appsettings.json value to win.
+  "containerEnv": {
+    "ConnectionStrings__MainDbConnection": "Host=postgres;Port=5432;Database=AppTemplate;Username=postgres;Password=postgres",
+    "Valkey__ConnectionString": "valkey:6379",
+    "EmailSettings__SmtpHost": "mailpit",
+    "EmailSettings__SmtpPort": "1025",
+    "FileStorage__S3__ServiceUrl": "http://localstack:4566"
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-dotnettools.csharp",
+        "ms-dotnettools.csdevkit",
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "Vue.volar",
+        "GitHub.copilot",
+        "ms-playwright.playwright"
+      ],
+      "settings": {
+        "dotnet.defaultSolution": "src/backend/AppTemplate.sln"
+      }
+    }
+  },
+  "postCreateCommand": "cd src/backend && dotnet restore && cd ../../src/frontend && npm i -g pnpm@10 && pnpm install",
+  // 5001/5002 Auth + Main API, 8001/8002 auth + main SPA dev servers,
+  // 5432 Postgres, 6379 Valkey, 4566 LocalStack, 8025 Mailpit web inbox.
+  "forwardPorts": [5001, 5002, 8001, 8002, 5432, 6379, 4566, 8025]
+}

@@ -1,0 +1,185 @@
+{
+  // Run/debug configurations for the solution at src/backend/AppTemplate.sln
+  // plus the pnpm workspace at src/frontend.
+  //
+  //   Auth API  -> src/backend/Auth/Auth.csproj   http://localhost:5001
+  //   Main API  -> src/backend/API/API.csproj     http://localhost:5002
+  //   Frontend  -> `pnpm dev` in src/frontend (starts both SPAs in parallel)
+  //
+  // "Hot Reload" runs `dotnet watch` in a terminal (fast edit loop, no
+  // breakpoints). "Debug" attaches the .NET debugger instead.
+  "version": "0.2.0",
+  "compounds": [
+    {
+      "name": "🚀 All Services (Hot Reload)",
+      "configurations": [
+        "Frontend (Hot Reload)",
+        "Auth API (Hot Reload)",
+        "Main API (Hot Reload)"
+      ],
+      "stopAll": true,
+      "presentation": {
+        "hidden": false,
+        "group": "Hot Reload",
+        "order": 1
+      }
+    },
+    {
+      "name": "🔧 Backend Only (Hot Reload)",
+      "configurations": ["Auth API (Hot Reload)", "Main API (Hot Reload)"],
+      "stopAll": true,
+      "presentation": {
+        "hidden": false,
+        "group": "Hot Reload",
+        "order": 2
+      }
+    },
+    {
+      "name": "🐛 All Services (Debug)",
+      "configurations": [
+        "Frontend (Hot Reload)",
+        "Auth API (Debug)",
+        "Main API (Debug)"
+      ],
+      "stopAll": true,
+      "presentation": {
+        "hidden": false,
+        "group": "Debug",
+        "order": 1
+      }
+    },
+    {
+      "name": "🐛 Backend Only (Debug)",
+      "configurations": ["Auth API (Debug)", "Main API (Debug)"],
+      "stopAll": true,
+      "presentation": {
+        "hidden": false,
+        "group": "Debug",
+        "order": 2
+      }
+    }
+  ],
+
+  "configurations": [
+    {
+      "name": "Auth API (Debug)",
+      "type": "dotnet",
+      "request": "launch",
+      "projectPath": "${workspaceFolder}/src/backend/Auth/Auth.csproj",
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ASPNETCORE_URLS": "http://localhost:5001"
+      },
+      "presentation": {
+        "hidden": false,
+        "group": "Debug",
+        "order": 2
+      }
+    },
+    {
+      "name": "Main API (Debug)",
+      "type": "dotnet",
+      "request": "launch",
+      "projectPath": "${workspaceFolder}/src/backend/API/API.csproj",
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ASPNETCORE_URLS": "http://localhost:5002"
+      },
+      "presentation": {
+        "hidden": false,
+        "group": "Debug",
+        "order": 3
+      }
+    },
+    {
+      "name": "Auth API (Hot Reload)",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "dotnet watch run --project src/backend/Auth/Auth.csproj",
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ASPNETCORE_URLS": "http://localhost:5001",
+        "DOTNET_WATCH_RESTART_ON_RUDE_EDIT": "true"
+      },
+      "presentation": {
+        "hidden": false,
+        "group": "Hot Reload",
+        "order": 2
+      }
+    },
+    {
+      "name": "Main API (Hot Reload)",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "dotnet watch run --project src/backend/API/API.csproj",
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ASPNETCORE_URLS": "http://localhost:5002",
+        "DOTNET_WATCH_RESTART_ON_RUDE_EDIT": "true"
+      },
+      "presentation": {
+        "hidden": false,
+        "group": "Hot Reload",
+        "order": 3
+      }
+    },
+    {
+      "name": "Frontend (Hot Reload)",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "pnpm dev",
+      "cwd": "${workspaceFolder}/src/frontend",
+      "presentation": {
+        "hidden": false,
+        "group": "Hot Reload",
+        "order": 1
+      }
+    },
+    {
+      "name": "Auth API (Run)",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "dotnet run --project src/backend/Auth/Auth.csproj",
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ASPNETCORE_URLS": "http://localhost:5001"
+      },
+      "presentation": {
+        "hidden": false,
+        "group": "Run",
+        "order": 2
+      }
+    },
+    {
+      "name": "Main API (Run)",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "dotnet run --project src/backend/API/API.csproj",
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ASPNETCORE_URLS": "http://localhost:5002"
+      },
+      "presentation": {
+        "hidden": false,
+        "group": "Run",
+        "order": 3
+      }
+    },
+    {
+      "name": "Frontend (Dev)",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "pnpm dev",
+      "cwd": "${workspaceFolder}/src/frontend",
+      "presentation": {
+        "hidden": false,
+        "group": "Run",
+        "order": 1
+      }
+    }
+  ]
+}

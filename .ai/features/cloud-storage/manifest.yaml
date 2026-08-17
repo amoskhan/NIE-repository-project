@@ -1,0 +1,26 @@
+name: cloud-storage
+title: Cloud Storage (Local + S3)
+category: backend
+status: released
+description: >
+  Pluggable file storage behind IFileStorageService, with a local-disk implementation
+  (FileStorageService) and a real AWS S3 implementation (S3FileStorageService, AWSSDK.S3).
+  Selected at startup via FileStorage:Provider; S3 credentials come from the AWS default
+  credential chain (no keys in appsettings).
+copierFlag: include_storage
+relatedTasks: []
+dependsOn: []
+removableInDerivedRepo: true
+removalTaskId: null
+files:
+  - path: "src/backend/Libraries/Services/Services/FileStorage/IFileStorageService.cs"
+    role: interface
+  - path: "src/backend/Libraries/Services/Services/FileStorage/FileStorageService.cs"
+    role: implementation
+  - path: "src/backend/Libraries/Services/Services/FileStorage/S3FileStorageService.cs"
+    role: implementation
+  - path: "src/backend/Libraries/Services/Services/FileStorage/FileStorageContentTypes.cs"
+    role: helper
+tags: [storage, s3, files]
+owners:
+  - "group:platform"

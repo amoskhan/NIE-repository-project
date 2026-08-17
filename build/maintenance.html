@@ -1,0 +1,405 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex" />
+    <title>App Template - Maintenance</title>
+    <!--
+      Static fallback page served by nginx for 502/503/504 (see build/nginx.conf).
+      It must stay fully self-contained: no external fonts, scripts, or images,
+      because it is shown precisely when upstream services are unreachable.
+    -->
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+
+      :root {
+        color-scheme: light;
+        --brand: #1500f8;
+        --brand-strong: #1100c8;
+        --brand-soft: #eceaff;
+        --accent: #0f766e;
+        --amber: #b45309;
+        --ink: #0f172a;
+        --muted: #475569;
+        --soft: #f8fafc;
+        --line: #e2e8f0;
+        --panel: rgba(255, 255, 255, 0.92);
+      }
+
+      html,
+      body {
+        min-height: 100%;
+      }
+
+      body {
+        margin: 0;
+        display: grid;
+        place-items: center;
+        overflow-x: hidden;
+        background:
+          linear-gradient(
+            180deg,
+            rgba(255, 255, 255, 0.9),
+            rgba(246, 245, 248, 0.96)
+          ),
+          repeating-linear-gradient(
+            90deg,
+            rgba(21, 0, 248, 0.04) 0,
+            rgba(21, 0, 248, 0.04) 1px,
+            transparent 1px,
+            transparent 72px
+          ),
+          repeating-linear-gradient(
+            0deg,
+            rgba(15, 23, 42, 0.04) 0,
+            rgba(15, 23, 42, 0.04) 1px,
+            transparent 1px,
+            transparent 72px
+          );
+        color: var(--ink);
+        font-family:
+          Lexend,
+          Inter,
+          "Segoe UI",
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          sans-serif;
+      }
+
+      .page {
+        width: min(100%, 760px);
+        padding: 32px 20px;
+      }
+
+      .panel {
+        position: relative;
+        overflow: hidden;
+        border: 1px solid rgba(15, 23, 42, 0.08);
+        border-radius: 16px;
+        background: var(--panel);
+        box-shadow: 0 24px 70px rgba(15, 23, 42, 0.14);
+      }
+
+      .panel::before {
+        content: "";
+        position: absolute;
+        inset: 0 0 auto;
+        height: 5px;
+        background: linear-gradient(
+          90deg,
+          var(--brand),
+          var(--accent),
+          var(--amber)
+        );
+      }
+
+      .content {
+        display: grid;
+        gap: 28px;
+        padding: 42px;
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        color: var(--brand-strong);
+        font-size: 13px;
+        font-weight: 800;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+
+      .brand-mark {
+        display: grid;
+        width: 34px;
+        height: 34px;
+        place-items: center;
+        border-radius: 10px;
+        background: var(--brand-soft);
+        color: var(--brand);
+      }
+
+      .brand-mark svg {
+        width: 20px;
+        height: 20px;
+      }
+
+      .layout {
+        display: grid;
+        grid-template-columns: 190px 1fr;
+        align-items: center;
+        gap: 34px;
+      }
+
+      .maintenance-symbol {
+        position: relative;
+        width: 180px;
+        height: 180px;
+        margin: 0 auto;
+        display: grid;
+        place-items: center;
+      }
+
+      .ring,
+      .ring::before {
+        position: absolute;
+        border-radius: 999px;
+      }
+
+      .ring {
+        inset: 0;
+        border: 2px solid rgba(21, 0, 248, 0.16);
+      }
+
+      .ring::before {
+        content: "";
+        inset: -2px;
+        border: 3px solid transparent;
+        border-top-color: var(--brand);
+        border-right-color: rgba(15, 118, 110, 0.85);
+        animation: spin 2.6s linear infinite;
+      }
+
+      .ring-small {
+        inset: 28px;
+        border-color: rgba(15, 118, 110, 0.16);
+      }
+
+      .ring-small::before {
+        border-top-color: var(--accent);
+        border-right-color: rgba(180, 83, 9, 0.85);
+        animation-duration: 2.1s;
+        animation-direction: reverse;
+      }
+
+      .tool-icon {
+        position: relative;
+        z-index: 1;
+        width: 72px;
+        height: 72px;
+        color: var(--brand);
+        filter: drop-shadow(0 12px 22px rgba(21, 0, 248, 0.18));
+        animation: pulse 2.4s ease-in-out infinite;
+      }
+
+      .eyebrow {
+        display: inline-flex;
+        width: fit-content;
+        align-items: center;
+        gap: 9px;
+        border: 1px solid rgba(180, 83, 9, 0.24);
+        border-radius: 8px;
+        background: rgba(254, 243, 199, 0.75);
+        color: var(--amber);
+        padding: 8px 12px;
+        font-size: 13px;
+        font-weight: 700;
+      }
+
+      .status-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--amber);
+        animation: status-pulse 2s ease-in-out infinite;
+      }
+
+      h1 {
+        margin: 16px 0 12px;
+        color: var(--ink);
+        font-size: clamp(30px, 5vw, 46px);
+        line-height: 1.05;
+        letter-spacing: -0.02em;
+      }
+
+      .copy {
+        margin: 0;
+        max-width: 520px;
+        color: var(--muted);
+        font-size: 17px;
+        line-height: 1.7;
+      }
+
+      .details {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+        padding-top: 4px;
+      }
+
+      .detail {
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: var(--soft);
+        padding: 14px;
+      }
+
+      .detail strong {
+        display: block;
+        margin-bottom: 4px;
+        color: var(--ink);
+        font-size: 13px;
+      }
+
+      .detail span {
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.45;
+      }
+
+      .footer {
+        border-top: 1px solid var(--line);
+        padding: 18px 42px 24px;
+        color: #64748b;
+        font-size: 13px;
+        line-height: 1.5;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      @keyframes pulse {
+        50% {
+          transform: scale(1.05);
+        }
+      }
+
+      @keyframes status-pulse {
+        50% {
+          box-shadow: 0 0 0 8px rgba(180, 83, 9, 0);
+          opacity: 0.72;
+        }
+      }
+
+      @media (max-width: 680px) {
+        .page {
+          padding: 18px 14px;
+        }
+
+        .content {
+          padding: 30px 22px;
+        }
+
+        .layout {
+          grid-template-columns: 1fr;
+          gap: 20px;
+          text-align: left;
+        }
+
+        .maintenance-symbol {
+          width: 150px;
+          height: 150px;
+        }
+
+        .details {
+          grid-template-columns: 1fr;
+        }
+
+        .footer {
+          padding: 18px 22px 22px;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .ring::before,
+        .tool-icon,
+        .status-dot {
+          animation: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page" role="main">
+      <section class="panel" aria-labelledby="maintenance-title">
+        <div class="content">
+          <div class="brand">
+            <span class="brand-mark" aria-hidden="true">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M12 2.5 21 7v10l-9 4.5L3 17V7z" />
+                <path d="M3 7l9 4.5L21 7" />
+                <path d="M12 11.5V21.5" />
+              </svg>
+            </span>
+            App Template
+          </div>
+
+          <div class="layout">
+            <div class="maintenance-symbol" aria-hidden="true">
+              <div class="ring"></div>
+              <div class="ring ring-small"></div>
+              <svg
+                class="tool-icon"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.7"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path
+                  d="M14.7 6.3a4 4 0 0 0-5.4 5.4l-5.8 5.8a2.1 2.1 0 0 0 3 3l5.8-5.8a4 4 0 0 0 5.4-5.4l-2.8 2.8-3-3 2.8-2.8z"
+                />
+                <path d="M5.4 18.6h.01" />
+              </svg>
+            </div>
+
+            <div>
+              <div class="eyebrow">
+                <span class="status-dot"></span>
+                Service temporarily unavailable
+              </div>
+              <h1 id="maintenance-title">We&rsquo;ll be back shortly</h1>
+              <p class="copy">
+                App Template is not reachable right now. This usually means the
+                application is being updated or restarted. Nothing you were
+                working on has been lost &mdash; please try again in a few
+                minutes.
+              </p>
+            </div>
+          </div>
+
+          <div class="details" aria-label="Maintenance details">
+            <div class="detail">
+              <strong>What happened</strong>
+              <span
+                >The web server could not reach the application services.</span
+              >
+            </div>
+            <div class="detail">
+              <strong>What is affected</strong>
+              <span>Sign-in, pages, and API requests are unavailable.</span>
+            </div>
+            <div class="detail">
+              <strong>What to do</strong>
+              <span>Wait a moment and reload this page.</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="footer">
+          This page is served automatically when the application services do not
+          respond. If it keeps appearing, check the service logs (or contact
+          whoever runs this deployment).
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

@@ -1,0 +1,38 @@
+name: authorization-access-functions
+title: Authorization (Access Functions)
+category: security
+status: released
+description: "Access-function based authorization: the AccessFunctionCatalog, RequireAccessFunction attribute, role bundles, and the access-control admin screens."
+copierFlag: null
+relatedTasks: []
+dependsOn: []
+removableInDerivedRepo: false
+removalTaskId: null
+files:
+  - path: "src/backend/Libraries/Domain/Models/AccessFunction.cs"
+    role: model
+  - path: "src/backend/Libraries/Domain/Models/Role.cs"
+    role: model
+  - path: "src/backend/Libraries/Domain/Models/RoleAccessFunction.cs"
+    role: model
+  - path: "src/backend/Libraries/Domain/Models/UserRole.cs"
+    role: model
+  - path: "src/backend/Libraries/Shared/Enum/EAccessFunctionType.cs"
+    role: enum
+  - path: "src/backend/Libraries/Shared/Enum/ERole.cs"
+    role: enum
+  - path: "src/backend/Libraries/Shared/Security/AccessFunctionCatalog.cs"
+    role: owned
+  - path: "src/backend/API/Authorization/RequireAccessFunctionAttribute.cs"
+    role: owned
+  - path: "src/backend/API/Middleware/UserRolesMiddleware.cs"
+    role: middleware
+  - path: "src/backend/API/Controllers/AccessControlController.cs"
+    role: controller
+  - path: "src/backend/Libraries/Services/Services/AccessFunction/IAccessFunctionService.cs"
+    role: interface
+  - path: "src/backend/Libraries/Services/Services/AccessFunction/AccessFunctionService.cs"
+    role: service
+tags: []
+owners:
+  - "group:platform"

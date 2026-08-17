@@ -1,0 +1,38 @@
+name: health-observability
+title: Health & Observability
+category: infra
+status: released
+description: "Health checks, OpenTelemetry tracing/metrics, and Sentry error capture across the API and Auth services."
+copierFlag: null
+relatedTasks: []
+dependsOn: []
+removableInDerivedRepo: false
+removalTaskId: null
+files:
+  - path: "src/backend/API/Extensions/ObservabilityExtensions.cs"
+    role: owned
+  - path: "src/backend/Auth/Extensions/ObservabilityExtensions.cs"
+    role: owned
+  - path: "src/backend/API/Middleware/CorrelationIdMiddleware.cs"
+    role: middleware
+  - path: "src/backend/API/Observability/SentryCronMonitor.cs"
+    role: owned
+  - path: "src/frontend/packages/shared/src/utils/sentry.ts"
+    role: owned
+  - path: "src/frontend/packages/shared/src/config/constants.ts"
+    role: config
+  - path: "src/backend/API/Program.cs"
+    role: touched
+  - path: "src/backend/Auth/Program.cs"
+    role: touched
+  - path: "src/frontend/main/src/main.ts"
+    role: touched
+  - path: "src/frontend/auth/src/main.ts"
+    role: touched
+  - path: "build/appsettings.api.json"
+    role: config
+  - path: "build/appsettings.auth.json"
+    role: config
+tags: []
+owners:
+  - "group:platform"

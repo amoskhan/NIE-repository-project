@@ -1,0 +1,27 @@
+name: pdf-generation
+title: PDF Generation
+category: backend
+status: scaffolded
+description: >
+  HTML-to-PDF via Playwright headless Chromium. Includes a Reports endpoint
+  with type catalog, filter-driven generation, and A4 print preview. Adds
+  Chromium runtime to the API container image.
+copierFlag: include_pdf
+relatedTasks: []
+dependsOn: []
+removableInDerivedRepo: true
+removalTaskId: null
+files:
+  - path: "src/backend/Libraries/Services/Services/PdfGeneration/IPdfGenerationService.cs"
+    role: interface
+  - path: "src/backend/Libraries/Services/Services/PdfGeneration/PlaywrightPdfGenerationService.cs"
+    role: implementation
+  - path: "src/backend/API/Controllers/ReportController.cs"
+    role: controller
+  - path: "src/backend/Libraries/Shared/Dto/Report/ReportRequestDto.cs"
+    role: dto
+  - path: "src/frontend/main/src/services/reportService.ts"
+    role: client
+tags: [pdf, reports, playwright]
+owners:
+  - "group:platform"

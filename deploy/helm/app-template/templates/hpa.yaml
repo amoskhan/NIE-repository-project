@@ -1,0 +1,41 @@
+{{/*
+One HorizontalPodAutoscaler per workload.
+
+The scale target follows the same rule as workloads.yaml: an Argo Rollout when
+blue/green is BOTH enabled and requested, otherwise the plain Deployment.
+CPU/memory utilisation targets only work when the workload declares
+`resources.requests` — see values-*.yaml.
+*/}}
+{{- range $name, $workload := .Values.workloads }}
+{{- if $workload.hpa }}
+{{- $serviceName := include "app-template.serviceName" (list $ $name) }}
+{{- $isBlueGreen := and $.Values.rollouts.enabled (eq $workload.strategy "BlueGreen") }}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ $serviceName }}
+  labels:
+    {{- include "app-template.selectorLabels" (list $ $name) | nindent 4 }}
+spec:
+  minReplicas: {{ $workload.hpa.minReplicas }}
+  maxReplicas: {{ $workload.hpa.maxReplicas }}
+  scaleTargetRef:
+    apiVersion: {{ $isBlueGreen | ternary "argoproj.io/v1alpha1" "apps/v1" }}
+    kind: {{ $isBlueGreen | ternary "Rollout" "Deployment" }}
+    name: {{ $serviceName }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ $workload.hpa.cpuUtilization }}
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: {{ $workload.hpa.memoryUtilization }}
+---
+{{- end }}
+{{- end }}

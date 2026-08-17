@@ -1,0 +1,208 @@
+# ============================================================
+# OS & System Files
+# ============================================================
+.DS_Store
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.crdownload
+
+# ============================================================
+# Editor & IDE
+# ============================================================
+.idea/
+.localhistory/
+
+# VS Code — keep project config, ignore personal settings
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+*.swp
+*.swo
+*.bak
+
+# Visual Studio
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.userprefs
+*.ntvs*
+*.njsproj
+
+# ReSharper
+_ReSharper*/
+*.[Rr]e[Ss]harper
+*.DotSettings.user
+
+# ============================================================
+# .NET / C#
+# ============================================================
+
+# Build output
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+bld/
+artifacts/
+
+# NuGet
+*.nupkg
+**/[Pp]ackages/*
+!src/frontend/packages/
+!src/frontend/packages/**
+# Except MSBuild targets
+!**/[Pp]ackages/build/
+*.nuget.props
+*.nuget.targets
+project.lock.json
+project.fragment.lock.json
+
+# Entity Framework
+*.rptproj.bak
+**/*.dbmdl
+**/*.jfm
+
+# Publish profiles
+**/Properties/PublishProfiles/
+*.pubxml
+*.pubxml.user
+*.Publish.xml
+*.PublishSettings
+PublishScripts/
+ScaffoldingReadMe.txt
+
+# Test results
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+_NCrunch_*
+.*crunch*.local.xml
+nCrunchTemp_*
+
+# Build cache (allow directories ending in .cache)
+*.[Cc]ache
+!?*.[Cc]ache/
+
+# SQL Server blobs
+*.mdf
+*.ldf
+*.ndf
+
+# Sensitive .NET config (never commit production secrets)
+appsettings.Development.local.json
+appsettings.Production.local.json
+secrets.json
+
+# ============================================================
+# Node.js / Frontend (pnpm monorepo)
+# ============================================================
+
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+.pnpm-store/
+
+# Build output
+dist/
+dist-ssr/
+lib/
+!src/frontend/packages/ui/src/lib/
+!src/frontend/packages/ui/src/lib/**
+.output/
+
+# TypeScript incremental build
+*.tsbuildinfo
+
+# Vite local overrides
+*.local
+!.env.development
+
+# Debug logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Python tooling caches
+__pycache__/
+*.py[cod]
+
+# ============================================================
+# Environment & Secrets
+# ============================================================
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.*
+# Keep default dev env examples
+!.env.development
+!tests/.env.dev
+
+# ============================================================
+# Playwright / Testing
+# ============================================================
+test-results/
+playwright-report/
+/reports/
+blob-report/
+
+# ============================================================
+# Docker / Runtime Data
+# ============================================================
+# Bind mounts created by build/docker-compose.yml on the deployment host
+build/pgdata/
+build/uploads/
+
+# Runtime file uploads (generated, not source)
+src/backend/API/uploads/
+
+# ============================================================
+# Binary Documents
+# Store in SharePoint / OneDrive, not in Git
+# ============================================================
+*.docx
+*.pdf
+*.pptx
+*.xlsx
+*.xls
+*.ppt
+*.doc
+
+# ============================================================
+# Logs
+# ============================================================
+*.log
+logs/
+
+# ============================================================
+# Project-Specific
+# ============================================================
+# npm lockfiles — the frontend workspace uses pnpm.
+# Exception: the repo ROOT uses npm for the commit-hook toolchain
+# (husky + lint-staged + prettier), so its lockfile IS committed to keep
+# everyone's pre-commit hook reproducible.
+package-lock.json
+!/package-lock.json
+
+# dotnet CLI first-run sentinels (created when DOTNET_CLI_HOME points here)
+.dotnet/
+
+# Temporary scratch folders
+temp/
+src/frontend/temp/
+
+.playwright-mcp/

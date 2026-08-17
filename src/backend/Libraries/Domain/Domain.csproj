@@ -1,0 +1,15 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<!-- Additional settings specific to Domain library -->
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Pgvector" Version="0.3.2" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\Shared\Shared.csproj" />
+	</ItemGroup>
+	
+</Project>

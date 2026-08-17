@@ -1,0 +1,41 @@
+name: ai-chatbot
+title: AI Chatbot
+category: backend
+status: scaffolded
+description: >
+  AI-powered chat with SSE streaming, conversation management, and pgvector
+  semantic search. Azure OpenAI is the only LLM backend shipped; without
+  credentials ChatService uses a placeholder responder. Requires swapping the
+  PostgreSQL image to pgvector/pgvector:pg18. Adopt only if the project
+  surfaces a chat experience.
+copierFlag: include_chat
+relatedTasks: []
+dependsOn: ["shared-utilities"]
+removableInDerivedRepo: true
+removalTaskId: null
+files:
+  - path: "src/backend/Libraries/Domain/Models/ChatConversation.cs"
+    role: domain
+  - path: "src/backend/Libraries/Domain/Models/ChatMessage.cs"
+    role: domain
+  - path: "src/backend/Libraries/Domain/Models/ChatEmbedding.cs"
+    role: domain
+  - path: "src/backend/Libraries/Services/Services/Chat/IChatService.cs"
+    role: interface
+  - path: "src/backend/Libraries/Services/Services/Chat/ChatService.cs"
+    role: implementation
+  - path: "src/backend/API/Controllers/ChatController.cs"
+    role: controller
+  - path: "src/frontend/main/src/pages/chat/ChatView.vue"
+    role: page
+  - path: "src/frontend/main/src/components/chat/ChatSidebar.vue"
+    role: component
+  - path: "src/frontend/main/src/components/chat/ChatMessageBubble.vue"
+    role: component
+  - path: "src/frontend/main/src/components/chat/ChatInputBox.vue"
+    role: component
+  - path: "src/frontend/main/src/services/chatService.ts"
+    role: client
+tags: [llm, sse, pgvector, ai]
+owners:
+  - "group:platform"

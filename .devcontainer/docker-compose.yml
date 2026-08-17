@@ -1,0 +1,97 @@
+# Dev Container backing services.
+# Image versions are kept in step with build/docker-compose.yml (the production
+# single-host topology) so local behaviour matches what you deploy.
+services:
+  app:
+    image: mcr.microsoft.com/devcontainers/base:ubuntu
+    volumes:
+      - ..:/workspace:cached
+    command: sleep infinity
+    depends_on:
+      - postgres
+      - valkey
+      - localstack
+      - mailpit
+    networks:
+      - devnet
+
+  postgres:
+    # AI CHATBOT: the RAG store needs the `vector` extension, which stock
+    # postgres does not ship. If you scaffolded with include_chat=true (or
+    # turned the chatbot on later), swap the line below for:
+    #   image: pgvector/pgvector:pg18
+    # It is the same Postgres 18 with pgvector preinstalled, ~150 MB larger.
+    # Keep this in step with build/docker-compose.yml. Existing volumes are not
+    # migrated by the image swap — either `docker compose down -v` to start
+    # clean, or run `CREATE EXTENSION IF NOT EXISTS vector;` yourself.
+    image: postgres:18-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: AppTemplate
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - devnet
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d AppTemplate"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  valkey:
+    image: valkey/valkey:9-alpine
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    networks:
+      - devnet
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Local SMTP sink. The default EmailSettings (localhost:1025) point here, so
+  # password-reset and notification emails work with no extra setup.
+  # Read them in the web inbox at http://localhost:8025.
+  mailpit:
+    image: axllent/mailpit:v1.30
+    restart: unless-stopped
+    environment:
+      MP_SMTP_BIND_ADDR: "0.0.0.0:1025"
+      MP_UI_BIND_ADDR: "0.0.0.0:8025"
+      MP_MAX_MESSAGES: "500"
+    ports:
+      - "1025:1025" # SMTP
+      - "8025:8025" # web inbox
+    networks:
+      - devnet
+
+  # Local AWS S3 emulator — lets you exercise the S3 file-storage provider
+  # (FileStorage:Provider=S3) locally without real AWS. The init script creates
+  # the dev bucket on startup. Pin/update the tag as needed:
+  # https://hub.docker.com/r/localstack/localstack/tags
+  localstack:
+    image: localstack/localstack:4.11.1
+    restart: unless-stopped
+    ports:
+      - "4566:4566" # LocalStack gateway (S3 endpoint)
+    environment:
+      - SERVICES=s3
+      - DEBUG=0
+      - PERSISTENCE=0
+    volumes:
+      - "./localstack/init-s3.sh:/etc/localstack/init/ready.d/init-s3.sh"
+    networks:
+      - devnet
+
+volumes:
+  pgdata:
+
+networks:
+  devnet:

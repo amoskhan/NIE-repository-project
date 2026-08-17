@@ -1,0 +1,54 @@
+# App Template — pre-commit hook (husky v9+; no `husky.sh` sourcing needed).
+#
+# Every step is skipped when the thing it needs is absent, and that is
+# deliberate:
+#   * A fresh clone has no node_modules until you run `npm install`.
+#   * Projects scaffolded with Copier do NOT receive the template-governance
+#     tools (copier.yml excludes tools/template-versioning and friends), so a
+#     hard call to them would break every commit in a student's project.
+# Nothing here is a substitute for CI — see .github/workflows/ci.yml.
+
+# Pick a Python interpreter, if there is one. `python` first: on Windows
+# `python3` is usually the Microsoft Store stub rather than a real interpreter.
+if command -v python >/dev/null 2>&1; then
+  PY=python
+elif command -v python3 >/dev/null 2>&1; then
+  PY=python3
+else
+  PY=""
+fi
+
+# 1) Format staged files — Prettier for the frontend, dotnet format for C#.
+#
+#    Both binaries are checked, not just lint-staged: the tasks in the
+#    `lint-staged` block of package.json call `prettier` by bare name and
+#    resolve it off PATH, so a tree where lint-staged is present but Prettier
+#    is not would fail every commit with "prettier: command not found" instead
+#    of skipping. Same guard philosophy as the steps below — if the tool is
+#    genuinely absent, say so and carry on; CI is the backstop.
+if [ ! -x node_modules/.bin/lint-staged ]; then
+  echo "pre-commit: lint-staged not installed (run 'npm install') — skipping formatting."
+elif [ ! -x node_modules/.bin/prettier ]; then
+  echo "pre-commit: prettier not installed (run 'npm install') — skipping formatting."
+else
+  node_modules/.bin/lint-staged || exit 1
+fi
+
+# 2) Template release manifest validation (template repo only).
+if [ -f tools/template-versioning/release.py ]; then
+  if [ -n "$PY" ]; then
+    "$PY" tools/template-versioning/release.py validate || exit 1
+  else
+    echo "pre-commit: no python on PATH — skipping template version validation."
+  fi
+fi
+
+# 3) Locked-file guardrail: template-owned files may only change as part of a
+#    template task. See .ai/common/11-customization-boundary.md.
+if [ -f tools/template-guardrails/check_locked_files.py ]; then
+  if [ -n "$PY" ]; then
+    "$PY" tools/template-guardrails/check_locked_files.py --staged || exit 1
+  else
+    echo "pre-commit: no python on PATH — skipping locked-file guardrail."
+  fi
+fi

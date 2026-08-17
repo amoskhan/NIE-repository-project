@@ -1,0 +1,32 @@
+name: code-tables
+title: Code Tables
+category: fullstack
+status: released
+description: "Reference/lookup data (Code entities) with typed ECodeType/ECodeName enums, a CodeService, and frontend code-table option composables."
+copierFlag: null
+relatedTasks: []
+dependsOn: []
+removableInDerivedRepo: false
+removalTaskId: null
+files:
+  - path: "src/backend/Libraries/Domain/Models/Code.cs"
+    role: model
+  - path: "src/backend/Libraries/Shared/Enum/ECodeType.cs"
+    role: enum
+  - path: "src/backend/Libraries/Shared/Enum/ECodeName.cs"
+    role: enum
+  - path: "src/backend/Libraries/Shared/Dto/CodeDto.cs"
+    role: model
+  - path: "src/backend/Libraries/Services/Services/Code/ICodeService.cs"
+    role: interface
+  - path: "src/backend/Libraries/Services/Services/Code/CodeService.cs"
+    role: service
+  - path: "src/backend/API/Controllers/CodeController.cs"
+    role: controller
+  - path: "src/frontend/main/src/services/codeTableService.ts"
+    role: client
+  - path: "src/frontend/main/src/composables/useCodeTableOptions.ts"
+    role: composable
+tags: []
+owners:
+  - "group:platform"

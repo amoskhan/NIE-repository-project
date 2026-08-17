@@ -1,0 +1,22 @@
+name: push-notifications-onesignal
+title: Push Notifications (OneSignal)
+category: fullstack
+status: released
+description: "Push notification delivery via OneSignal, with a provider abstraction and user notification preferences."
+copierFlag: null
+relatedTasks: []
+dependsOn: []
+removableInDerivedRepo: false
+removalTaskId: null
+files:
+  - path: "src/backend/Libraries/Services/Services/PushNotification/IPushNotificationService.cs"
+    role: interface
+  - path: "src/backend/Libraries/Services/Services/PushNotification/OneSignalPushNotificationService.cs"
+    role: service
+  - path: "src/backend/Libraries/Shared/Models/OneSignalSettings.cs"
+    role: model
+  - path: "src/frontend/main/src/services/oneSignalService.ts"
+    role: client
+tags: []
+owners:
+  - "group:platform"

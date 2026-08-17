@@ -1,0 +1,43 @@
+{
+  "taskId": "0001",
+  "slug": "baseline",
+  "title": "Adopt the App Template baseline",
+  "type": "feature",
+  "breaking": false,
+  "runOnClone": true,
+  "status": "released",
+  "minTemplateVersion": null,
+  "templateVersionAfterApply": "2026.07.31.1",
+  "dependsOn": [],
+  "supersedes": null,
+  "summary": "Marks a repository as sitting on the App Template 2026.07.31.1 baseline. A freshly scaffolded project already ships the marker, so this task is a no-op there — it exists so the task index has a first entry to anchor every later task's dependsOn/minTemplateVersion chain, and so a repo that lost (or never had) .app-template-version.json can be brought back onto the baseline without guessing. Applying it creates the adoption marker only; it changes no application code.",
+  "appliesIf": {
+    "anyFileExists": [],
+    "allFilesExist": [],
+    "noneFileExist": [".app-template-version.json"],
+    "anyFileContains": [],
+    "allFilesContain": [],
+    "noneFileContains": []
+  },
+  "filesDeleted": [],
+  "filesEdited": [],
+  "filesCreated": [".app-template-version.json"],
+  "verification": [
+    {
+      "type": "command",
+      "run": "bash .ai/tasks/0001-baseline/verify.sh",
+      "expectExit": 0
+    },
+    {
+      "type": "command",
+      "run": "dotnet build src/backend/AppTemplate.sln",
+      "expectExit": 0
+    },
+    {
+      "type": "command",
+      "run": "python tools/template-versioning/release.py validate",
+      "expectExit": 0
+    }
+  ],
+  "docs": [".ai/common/09-template-versioning.md"]
+}

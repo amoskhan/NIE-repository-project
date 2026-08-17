@@ -1,0 +1,111 @@
+# Main API image (ASP.NET Core + Playwright for PDF/report rendering).
+#
+# Build context is the REPOSITORY ROOT:
+#   docker build -f build/Dockerfile.api -t apptemplate-main-api .
+#
+# Debian-based (not Alpine) because Playwright's Chromium needs glibc.
+
+# Build stage
+FROM mcr.microsoft.com/dotnet/sdk:10.0.102 AS build
+WORKDIR /src
+
+ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
+
+# Copy project files and restore as distinct layers for better caching
+COPY ["src/backend/Directory.Build.props", "./"]
+COPY ["src/backend/global.json", "./"]
+COPY ["src/backend/API/API.csproj", "API/"]
+COPY ["src/backend/Libraries/AI/AI.csproj", "Libraries/AI/"]
+COPY ["src/backend/Libraries/Data/Data.csproj", "Libraries/Data/"]
+COPY ["src/backend/Libraries/Domain/Domain.csproj", "Libraries/Domain/"]
+COPY ["src/backend/Libraries/Services/Services.csproj", "Libraries/Services/"]
+COPY ["src/backend/Libraries/Shared/Shared.csproj", "Libraries/Shared/"]
+
+# Restore dependencies
+RUN dotnet restore "API/API.csproj" --use-current-runtime
+
+# Copy source code
+COPY ["src/backend/API/", "API/"]
+COPY ["src/backend/Libraries/", "Libraries/"]
+# NOTE: the PDF report logo is backend-owned
+# (Libraries/Services/Services/PdfGeneration/Assets/report-logo.svg) and is copied by the
+# line above. No frontend asset needs staging here — this image builds from src/backend
+# alone, which is also what makes a `stack: backend` scaffold buildable.
+
+# Publish with optimizations
+RUN dotnet publish "API/API.csproj" \
+    -c Release \
+    -o /app/publish \
+    --use-current-runtime \
+    --self-contained false \
+    --no-restore \
+    /p:PublishTrimmed=false \
+    /p:PublishSingleFile=false
+
+RUN pwsh /app/publish/playwright.ps1 install chromium
+
+# Remove unnecessary files
+RUN rm -f /app/publish/appsettings.json \
+    && rm -f /app/publish/*.pdb \
+    && find /app/publish -name "*.xml" -delete
+
+# Runtime stage
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
+WORKDIR /app
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        ca-certificates \
+        curl \
+        fontconfig \
+        fonts-liberation \
+        fonts-noto-cjk \
+        fonts-noto-color-emoji \
+        libasound2t64 \
+        libatk-bridge2.0-0 \
+        libatk1.0-0 \
+        libcairo2 \
+        libcups2 \
+        libdbus-1-3 \
+        libdrm2 \
+        libgbm1 \
+        libglib2.0-0 \
+        libgtk-3-0 \
+        libnspr4 \
+        libnss3 \
+        libpango-1.0-0 \
+        libx11-6 \
+        libx11-xcb1 \
+        libxcb1 \
+        libxcomposite1 \
+        libxdamage1 \
+        libxext6 \
+        libxfixes3 \
+        libxkbcommon0 \
+        libxrandr2 \
+        libxshmfence1 \
+        libxtst6 \
+        tzdata \
+        xdg-utils \
+    && rm -rf /var/lib/apt/lists/* \
+    && groupadd --gid 1001 appgroup \
+    && useradd --uid 1001 --gid appgroup --home-dir /app --shell /usr/sbin/nologin --no-create-home appuser
+COPY --from=build --chown=appuser:appgroup /app/publish .
+COPY --from=build --chown=appuser:appgroup /ms-playwright /ms-playwright
+
+ENV ASPNETCORE_URLS=http://+:8080 \
+    DOTNET_RUNNING_IN_CONTAINER=true \
+    DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=false \
+    PLAYWRIGHT_BROWSERS_PATH=/ms-playwright \
+    HOME=/tmp \
+    XDG_CACHE_HOME=/tmp/.cache \
+    TMPDIR=/tmp
+
+USER appuser
+
+EXPOSE 8080
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
+    CMD curl -fsS http://localhost:8080/health/live || exit 1
+
+ENTRYPOINT ["dotnet", "API.dll"]

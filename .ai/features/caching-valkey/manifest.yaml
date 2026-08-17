@@ -1,0 +1,22 @@
+name: caching-valkey
+title: Caching (Valkey)
+category: backend
+status: released
+description: "Valkey (Redis-compatible) distributed cache used for sessions and general caching. It owns no dedicated source file — it is configured directly in the two Program.cs files (IConnectionMultiplexer + AddStackExchangeRedisCache) and consumed via IDistributedCache across features."
+copierFlag: null
+relatedTasks: []
+dependsOn: []
+removableInDerivedRepo: false
+removalTaskId: null
+files:
+  - path: "src/backend/API/Program.cs"
+    role: registration
+  - path: "src/backend/Auth/Program.cs"
+    role: registration
+  - path: "src/backend/API/appsettings.json"
+    role: config
+  - path: "src/backend/Auth/appsettings.json"
+    role: config
+tags: [cache, valkey, redis, sessions]
+owners:
+  - "group:platform"

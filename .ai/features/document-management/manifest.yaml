@@ -1,0 +1,28 @@
+name: document-management
+title: Document Management
+category: backend
+status: released
+description: "Polymorphic document storage and download via the Document entity, DocumentService, and a pluggable file-storage provider."
+copierFlag: null
+relatedTasks: []
+dependsOn: []
+removableInDerivedRepo: false
+removalTaskId: null
+files:
+  - path: "src/backend/Libraries/Domain/Models/Document.cs"
+    role: model
+  - path: "src/backend/Libraries/Services/Services/Document/IDocumentService.cs"
+    role: interface
+  - path: "src/backend/Libraries/Services/Services/Document/DocumentService.cs"
+    role: service
+  - path: "src/backend/Libraries/Services/Services/FileStorage/IFileStorageService.cs"
+    role: interface
+  - path: "src/backend/Libraries/Services/Services/FileStorage/FileStorageService.cs"
+    role: service
+  - path: "src/backend/API/Controllers/DocumentController.cs"
+    role: controller
+  - path: "src/frontend/packages/ui/src/components/composite/file-upload/index.ts"
+    role: owned
+tags: []
+owners:
+  - "group:platform"

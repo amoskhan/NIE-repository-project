@@ -1,0 +1,95 @@
+{
+  "schemaVersion": 1,
+  "key": "app-template",
+  "name": "App Template",
+  "repo": "https://github.com/your-org/app-template.git",
+  "engine": {
+    "kind": "copier",
+    "answersProfile": "default"
+  },
+  "workspaceRoot": "/home/coder/workspace/project",
+  "frontends": [
+    {
+      "name": "main",
+      "path": "src/frontend/main",
+      "port": 18002,
+      "basePath": "/",
+      "previewSlug": "preview-main",
+      "label": "App",
+      "primary": true,
+      "devCommand": "vite --mode development --host 0.0.0.0 --port {port} --strictPort",
+      "installCommand": "pnpm --dir src/frontend install --no-frozen-lockfile --prefer-offline",
+      "dependencyManifests": [
+        "src/frontend/package.json",
+        "src/frontend/pnpm-lock.yaml",
+        "src/frontend/pnpm-workspace.yaml",
+        "src/frontend/main/package.json"
+      ]
+    },
+    {
+      "name": "auth",
+      "path": "src/frontend/auth",
+      "port": 18001,
+      "basePath": "/login/",
+      "previewSlug": "preview-auth",
+      "label": "Login",
+      "primary": false,
+      "devCommand": "vite --mode development --host 0.0.0.0 --port {port} --strictPort",
+      "installCommand": "pnpm --dir src/frontend install --no-frozen-lockfile --prefer-offline",
+      "dependencyManifests": [
+        "src/frontend/package.json",
+        "src/frontend/pnpm-lock.yaml",
+        "src/frontend/pnpm-workspace.yaml",
+        "src/frontend/auth/package.json"
+      ]
+    }
+  ],
+  "backends": [
+    {
+      "name": "api",
+      "projectPath": "src/backend/API/API.csproj",
+      "assemblyName": "API",
+      "port": 15002,
+      "healthPath": "/health/live",
+      "previewSlug": "main-api",
+      "watchGlobs": ["*.cs", "*.csproj", "appsettings*.json"]
+    },
+    {
+      "name": "auth",
+      "projectPath": "src/backend/Auth/Auth.csproj",
+      "assemblyName": "Auth",
+      "port": 15001,
+      "healthPath": "/health/live",
+      "previewSlug": "auth-api",
+      "watchGlobs": ["*.cs", "*.csproj", "appsettings*.json"]
+    }
+  ],
+  "datastores": [
+    {
+      "type": "postgres",
+      "port": 5432,
+      "database": "AppTemplate"
+    },
+    {
+      "type": "valkey",
+      "port": 6379
+    }
+  ],
+  "validation": {
+    "frontend": [
+      "pnpm --dir src/frontend run type-check",
+      "pnpm --dir src/frontend run lint",
+      "pnpm --dir src/frontend run build"
+    ],
+    "backend": ["dotnet build src/backend/AppTemplate.sln"]
+  },
+  "specKit": {
+    "baselineRepo": "same-as-template"
+  },
+  "toolchain": {
+    "dotnetSdk": "10.0.102",
+    "node": ">=22.12.0",
+    "pnpm": "10.33.0",
+    "postgres": "18"
+  }
+}

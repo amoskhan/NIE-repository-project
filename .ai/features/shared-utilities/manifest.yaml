@@ -1,0 +1,38 @@
+name: shared-utilities
+title: Shared Utilities
+category: fullstack
+status: released
+description: "Cross-cutting helpers: the @apptemplate/shared package (constants, i18n, Sentry, types) and backend Shared helpers."
+copierFlag: null
+relatedTasks: []
+dependsOn: []
+removableInDerivedRepo: false
+removalTaskId: null
+files:
+  - path: "src/frontend/packages/shared/package.json"
+    role: owned
+  - path: "src/frontend/packages/shared/src/index.ts"
+    role: owned
+  - path: "src/frontend/packages/shared/src/composables/index.ts"
+    role: composable
+  - path: "src/frontend/packages/shared/src/composables/useApi.ts"
+    role: composable
+  - path: "src/frontend/packages/shared/src/composables/useAuth.ts"
+    role: composable
+  - path: "src/frontend/main/src/composables/useAuth.ts"
+    role: composable
+  - path: "src/frontend/packages/shared/src/composables/useFormValidation.ts"
+    role: composable
+  - path: "src/frontend/packages/shared/src/utils/index.ts"
+    role: owned
+  - path: "src/frontend/packages/shared/src/utils/format.ts"
+    role: owned
+  - path: "src/frontend/packages/shared/src/types/index.ts"
+    role: owned
+  - path: "src/frontend/packages/shared/src/types/api.ts"
+    role: owned
+  - path: "src/frontend/packages/shared/src/types/role.ts"
+    role: owned
+tags: []
+owners:
+  - "group:platform"

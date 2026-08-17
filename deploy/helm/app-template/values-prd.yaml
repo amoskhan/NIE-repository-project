@@ -1,0 +1,67 @@
+# Production environment. Merged on top of values.yaml.
+appKey: apptemplate
+environment: prd
+hostingMode: path
+hostName: apps.example.com
+pathPrefix: MYAPP
+runtimeSecretName: runtime-config
+
+# OPTIONAL blue/green deploys via Argo Rollouts.
+# Ships OFF: `strategy: BlueGreen` below only takes effect once you install the
+# Argo Rollouts controller + CRDs and flip this to true. Until then every
+# workload renders as a plain Deployment with a rolling update.
+rollouts:
+  enabled: false
+
+workloads:
+  api:
+    # Only needed if the pod assumes a cloud IAM role (e.g. IRSA / Workload
+    # Identity) for S3 file storage. Delete it otherwise.
+    serviceAccountName: apptemplate-api
+    image:
+      repository: registry.example.com/app-template/api
+      tag: latest
+    containerPort: 8080
+    servicePort: 80
+    healthPath: /health
+    ingressEnabled: true
+    pathSegment: api-main
+    strategy: BlueGreen
+    replicas: 2
+    resources:
+      requests:
+        cpu: 250m
+        memory: 512Mi
+      limits:
+        memory: 1Gi
+    hpa:
+      minReplicas: 2
+      maxReplicas: 6
+      cpuUtilization: 70
+      memoryUtilization: 75
+    pdb:
+      minAvailable: 1
+  auth-api:
+    image:
+      repository: registry.example.com/app-template/auth-api
+      tag: latest
+    containerPort: 8080
+    servicePort: 80
+    healthPath: /health
+    ingressEnabled: true
+    pathSegment: api-auth
+    strategy: BlueGreen
+    replicas: 2
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        memory: 512Mi
+    hpa:
+      minReplicas: 2
+      maxReplicas: 4
+      cpuUtilization: 70
+      memoryUtilization: 75
+    pdb:
+      minAvailable: 1

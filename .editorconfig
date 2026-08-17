@@ -1,0 +1,46 @@
+# EditorConfig: https://EditorConfig.org
+
+# top-most EditorConfig file
+root = true
+
+# All files
+#
+# LF everywhere: the backend, the frontend build and every deployment artefact
+# run in Linux containers, and `.gitattributes` checks the tree out with LF on
+# all platforms. Keeping the editor in step stops `dotnet format` and Prettier
+# from rewriting whole files on Windows.
+[*]
+indent_style = space
+indent_size = 2
+end_of_line = lf
+charset = utf-8
+trim_trailing_whitespace = true
+insert_final_newline = true
+
+# Markdown files
+[*.md]
+trim_trailing_whitespace = false
+
+# C# files (4-space indent per .NET convention)
+[*.cs]
+indent_size = 4
+
+# XML, project files
+[*.{xml,csproj,props,targets,sln}]
+indent_size = 2
+
+# JSON files
+[*.json]
+indent_size = 2
+
+# YAML files
+[*.{yml,yaml}]
+indent_size = 2
+
+# TypeScript / JavaScript / Vue
+[*.{ts,js,vue,tsx,jsx}]
+indent_size = 2
+
+# CSS / SCSS / HTML
+[*.{css,scss,html}]
+indent_size = 2

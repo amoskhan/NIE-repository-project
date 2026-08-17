@@ -1,0 +1,27 @@
+{{/*
+PodDisruptionBudget — rendered only for workloads that declare a `pdb` block.
+Keeps voluntary disruptions (node drains, cluster upgrades) from taking every
+replica down at once. Single-replica dev/staging workloads deliberately omit it.
+
+The selector uses the same name + instance + component triple as the workload it
+protects, so a PDB in a shared namespace cannot accidentally cover another
+environment's pods.
+*/}}
+{{- range $name, $workload := .Values.workloads }}
+{{- if $workload.pdb }}
+{{- $serviceName := include "app-template.serviceName" (list $ $name) }}
+{{- $selectorLabels := include "app-template.selectorLabels" (list $ $name) }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ $serviceName }}
+  labels:
+    {{- $selectorLabels | nindent 4 }}
+spec:
+  minAvailable: {{ $workload.pdb.minAvailable }}
+  selector:
+    matchLabels:
+      {{- $selectorLabels | nindent 6 }}
+---
+{{- end }}
+{{- end }}

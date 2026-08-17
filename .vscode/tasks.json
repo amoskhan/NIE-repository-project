@@ -1,0 +1,123 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      // Default build (Ctrl+Shift+B): compiles every project in the solution.
+      "label": "Build Solution",
+      "type": "shell",
+      "command": "dotnet",
+      "args": [
+        "build",
+        "${workspaceFolder}/src/backend/AppTemplate.sln",
+        "-c",
+        "Debug"
+      ],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": "$msCompile",
+      "presentation": {
+        "reveal": "silent",
+        "close": true
+      }
+    },
+    {
+      "label": "Build Auth API",
+      "type": "shell",
+      "command": "dotnet",
+      "args": [
+        "build",
+        "${workspaceFolder}/src/backend/Auth/Auth.csproj",
+        "-c",
+        "Debug"
+      ],
+      "group": "build",
+      "problemMatcher": "$msCompile",
+      "presentation": {
+        "reveal": "silent",
+        "close": true
+      }
+    },
+    {
+      "label": "Build Main API",
+      "type": "shell",
+      "command": "dotnet",
+      "args": [
+        "build",
+        "${workspaceFolder}/src/backend/API/API.csproj",
+        "-c",
+        "Debug"
+      ],
+      "group": "build",
+      "problemMatcher": "$msCompile",
+      "presentation": {
+        "reveal": "silent",
+        "close": true
+      }
+    },
+    {
+      "label": "Build All Backend",
+      "dependsOn": ["Build Auth API", "Build Main API"],
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "Format Backend",
+      "type": "shell",
+      "command": "dotnet",
+      "args": ["format", "${workspaceFolder}/src/backend/AppTemplate.sln"],
+      "problemMatcher": []
+    },
+    {
+      "label": "Build UI Package",
+      "type": "shell",
+      "command": "pnpm",
+      "args": ["run", "build:ui"],
+      "options": {
+        "cwd": "${workspaceFolder}/src/frontend"
+      },
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "Build Shared Package",
+      "type": "shell",
+      "command": "pnpm",
+      "args": ["run", "build:shared"],
+      "options": {
+        "cwd": "${workspaceFolder}/src/frontend"
+      },
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      // @apptemplate/ui must be built before @apptemplate/shared and the apps.
+      "label": "Build Frontend Packages",
+      "dependsOn": ["Build UI Package", "Build Shared Package"],
+      "dependsOrder": "sequence",
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "Type-check Frontend",
+      "type": "shell",
+      "command": "pnpm",
+      "args": ["run", "type-check"],
+      "options": {
+        "cwd": "${workspaceFolder}/src/frontend"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Install Frontend Dependencies",
+      "type": "shell",
+      "command": "pnpm",
+      "args": ["install"],
+      "options": {
+        "cwd": "${workspaceFolder}/src/frontend"
+      },
+      "problemMatcher": []
+    }
+  ]
+}

@@ -1,0 +1,43 @@
+name: deployment-helm-pipeline
+title: Deployment (GitHub Actions, Helm, Docker Compose)
+category: infra
+status: released
+description: "Delivery layer for the template: a single build-only GitHub Actions workflow (ci.yml — audit and image-publish workflows are left for the project to add), a Docker Compose stack on public base images for local and single-host running, and an optional neutral Helm chart for projects that have a Kubernetes cluster. Pick the path you need and delete the rest."
+copierFlag: null
+relatedTasks: []
+dependsOn:
+  - health-observability
+removableInDerivedRepo: true
+removalTaskId: null
+files:
+  - path: ".github/workflows"
+    role: ci
+  - path: "build/docker-compose.yml"
+    role: owned
+  - path: "build/Dockerfile.api"
+    role: owned
+  - path: "build/Dockerfile.auth"
+    role: owned
+  - path: "build/Dockerfile.ui"
+    role: owned
+  - path: "build/nginx.conf"
+    role: config
+  - path: "deploy/helm/app-template/Chart.yaml"
+    role: owned
+  - path: "deploy/helm/app-template/values.yaml"
+    role: owned
+  - path: "deploy/helm/app-template/templates/workloads.yaml"
+    role: owned
+  - path: "deploy/helm/app-template/templates/ingress.yaml"
+    role: owned
+  - path: "deploy/helm/app-template/templates/hpa.yaml"
+    role: owned
+  - path: "deploy/helm/app-template/templates/pdb.yaml"
+    role: owned
+tags:
+  - github-actions
+  - docker-compose
+  - helm
+  - kubernetes
+owners:
+  - "group:platform"

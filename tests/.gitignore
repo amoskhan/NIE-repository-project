@@ -1,0 +1,7 @@
+# Dependencies, test artifacts, and env files are covered by root .gitignore.
+# This file only contains patterns scoped to the tests/ directory.
+
+# Playwright failure screenshots and trace videos
+# (scoped here so root doesn't accidentally ignore frontend PNG assets)
+*.png
+*.webm

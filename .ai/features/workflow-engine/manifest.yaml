@@ -1,0 +1,37 @@
+name: workflow-engine
+title: Workflow Engine
+category: backend
+status: scaffolded
+description: >
+  Table-driven state machine for approval / status / compliance flows.
+  Transitions are seeded data — adding a new state never requires code
+  changes. Used by procurement and any approval-driven entity.
+copierFlag: include_workflow
+relatedTasks: []
+dependsOn: ["audit-logging", "authorization-access-functions"]
+removableInDerivedRepo: false
+removalTaskId: null
+files:
+  - path: "src/backend/Libraries/Shared/Enum/EWorkflowState.cs"
+    role: enum
+  - path: "src/backend/Libraries/Domain/Models/WorkflowTransition.cs"
+    role: domain
+  - path: "src/backend/Libraries/Domain/Models/WorkflowStateLog.cs"
+    role: domain
+  - path: "src/backend/Libraries/Services/Services/Workflow/IWorkflowService.cs"
+    role: interface
+  - path: "src/backend/Libraries/Services/Services/Workflow/WorkflowService.cs"
+    role: implementation
+  - path: "src/backend/API/Controllers/WorkflowController.cs"
+    role: controller
+  - path: "src/frontend/main/src/types/workflow.ts"
+    role: types
+  - path: "src/frontend/main/src/services/workflowService.ts"
+    role: client
+  - path: "src/frontend/main/src/components/workflow/WorkflowTimeline.vue"
+    role: component
+  - path: "src/frontend/main/src/components/workflow/WorkflowActionBar.vue"
+    role: component
+tags: [workflow, state-machine, approvals]
+owners:
+  - "group:platform"

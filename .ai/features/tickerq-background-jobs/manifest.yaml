@@ -1,0 +1,21 @@
+name: tickerq-background-jobs
+title: TickerQ Background Jobs
+category: backend
+status: released
+description: "Scheduled and background jobs via TickerQ, such as the audit-log purge job."
+copierFlag: null
+relatedTasks: []
+dependsOn:
+  - health-observability
+removableInDerivedRepo: false
+removalTaskId: null
+files:
+  - path: "src/backend/API/Extensions/TickerQExtensions.cs"
+    role: owned
+  - path: "src/backend/API/Jobs/AuditLogPurgeJob.cs"
+    role: owned
+  - path: "src/backend/API/Observability/SentryCronMonitor.cs"
+    role: dependency
+tags: []
+owners:
+  - "group:platform"

@@ -1,0 +1,11 @@
+{
+  "recommendations": [
+    "ms-dotnettools.csdevkit",
+    "ms-dotnettools.csharp",
+    "esbenp.prettier-vscode",
+    "editorconfig.editorconfig",
+    "Vue.volar",
+    "ms-playwright.playwright",
+    "streetsidesoftware.code-spell-checker"
+  ]
+}

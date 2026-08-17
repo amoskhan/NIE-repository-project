@@ -1,0 +1,53 @@
+# Frontend image: builds the pnpm monorepo, serves both SPAs from nginx.
+#
+# Build context is the REPOSITORY ROOT:
+#   docker build -f build/Dockerfile.ui -t apptemplate-ui .
+#
+# BUILD_ENV selects the Vite mode (`production` or `staging`). Application
+# settings are NOT baked in at build time — the SPAs read their runtime config
+# from `<meta name="app:*">` tags, so one image works in every environment.
+
+# Build stage - uses the pnpm workspace in src/frontend
+FROM node:24-alpine AS build
+ARG BUILD_ENV=production
+WORKDIR /app
+
+# Install pnpm (version pinned to the workspace's packageManager field)
+RUN corepack enable && corepack prepare pnpm@10.33.0 --activate
+
+# Copy workspace config and lockfile first for better caching
+COPY src/frontend/package.json src/frontend/pnpm-workspace.yaml src/frontend/pnpm-lock.yaml ./
+COPY src/frontend/main/package.json main/package.json
+COPY src/frontend/auth/package.json auth/package.json
+COPY src/frontend/packages/ui/package.json packages/ui/package.json
+COPY src/frontend/packages/shared/package.json packages/shared/package.json
+
+# Install all dependencies
+RUN pnpm install --frozen-lockfile
+
+# Copy all source files
+COPY src/frontend/main/ main/
+COPY src/frontend/auth/ auth/
+COPY src/frontend/packages/ packages/
+
+# Build shared packages first, then the two apps
+RUN pnpm run build:ui && pnpm run build:shared
+RUN cd main && pnpm run build:${BUILD_ENV}
+RUN cd auth && pnpm run build:${BUILD_ENV}
+
+# Production stage
+FROM nginx:1.29-alpine AS runtime
+
+# Main SPA -> /MYAPP/ , login SPA -> /MYAPP/login/ (see build/nginx.conf)
+COPY --from=build /app/main/dist /usr/share/nginx/html/main
+COPY --from=build /app/auth/dist /usr/share/nginx/html/login
+
+COPY build/maintenance.html /usr/share/nginx/html/maintenance.html
+COPY build/nginx.conf /etc/nginx/conf.d/default.conf
+
+EXPOSE 80
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+    CMD wget -q -O - http://localhost/ > /dev/null || exit 1
+
+CMD ["nginx", "-g", "daemon off;"]

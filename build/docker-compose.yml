@@ -1,0 +1,132 @@
+# App Template — single-host production topology.
+#
+# Everything runs on one Docker network (`apptemplate-network`); only the UI
+# container publishes a port. Put a TLS terminator (or your platform's load
+# balancer) in front of it.
+#
+# Required environment (Compose reads `.env` from THIS directory):
+#   DOCKER_REGISTRY_URL   registry that hosts the three images, e.g. ghcr.io/your-org
+#   COMMIT_ID             image tag to deploy, e.g. a git SHA or release tag
+#   POSTGRES_PASSWORD     database password (must match appsettings.*.json)
+#
+# Usage:
+#   cp build/.env.example build/.env     # then fill it in — every value matters
+#   docker compose -f build/docker-compose.yml up -d
+name: apptemplate
+
+services:
+  apptemplate-ui:
+    image: ${DOCKER_REGISTRY_URL}/apptemplate-ui:${COMMIT_ID}
+    container_name: apptemplate-ui
+    restart: always
+    ports:
+      - "8102:80"
+    networks:
+      - apptemplate-network
+    depends_on:
+      apptemplate-auth-service:
+        condition: service_healthy
+      apptemplate-api-service:
+        condition: service_healthy
+
+  apptemplate-auth-service:
+    image: ${DOCKER_REGISTRY_URL}/apptemplate-auth-api:${COMMIT_ID}
+    container_name: apptemplate-auth-service
+    restart: always
+    volumes:
+      - ./appsettings.auth.json:/app/appsettings.json:ro
+    networks:
+      - apptemplate-network
+    environment:
+      - ASPNETCORE_ENVIRONMENT=production
+    depends_on:
+      apptemplate-postgres:
+        condition: service_healthy
+      apptemplate-valkey:
+        condition: service_healthy
+
+  apptemplate-api-service:
+    image: ${DOCKER_REGISTRY_URL}/apptemplate-main-api:${COMMIT_ID}
+    container_name: apptemplate-api-service
+    restart: always
+    volumes:
+      - ./appsettings.api.json:/app/appsettings.json:ro
+      - ./uploads:/app/files
+    environment:
+      - ASPNETCORE_ENVIRONMENT=production
+    networks:
+      - apptemplate-network
+    depends_on:
+      apptemplate-postgres:
+        condition: service_healthy
+      apptemplate-valkey:
+        condition: service_healthy
+
+  apptemplate-valkey:
+    image: valkey/valkey:9-alpine
+    container_name: apptemplate-valkey
+    restart: always
+    networks:
+      - apptemplate-network
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  apptemplate-postgres:
+    # AI CHATBOT: the RAG store needs the `vector` extension, which stock
+    # postgres does not ship. If you scaffolded with include_chat=true (or
+    # turned the chatbot on later), swap the line below for:
+    #   image: pgvector/pgvector:pg18
+    # It is the same Postgres 18 with pgvector preinstalled, ~150 MB larger.
+    # Keep this in step with .devcontainer/docker-compose.yml, and note that
+    # switching the image does NOT create the extension in an existing volume —
+    # run `CREATE EXTENSION IF NOT EXISTS vector;` against the database (or let
+    # EF Core's HasPostgresExtension("vector") do it on the next migration).
+    image: postgres:18-alpine
+    container_name: apptemplate-postgres
+    restart: always
+    environment:
+      POSTGRES_DB: "AppTemplate"
+      POSTGRES_USER: "postgres"
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_INITDB_ARGS: "--auth-host=md5"
+    volumes:
+      - ./pgdata:/var/lib/postgresql/data
+    networks:
+      - apptemplate-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d AppTemplate"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # Mail catcher. Gives the template a working SMTP sink out of the box so
+  # password-reset and notification emails go somewhere visible instead of
+  # failing. Point `EmailSettings` at a real relay when you have one.
+  # Both ports are bound to the loopback interface only — the web inbox is for
+  # whoever operates the host, not for the internet.
+  apptemplate-mailpit:
+    image: axllent/mailpit:v1.30
+    container_name: apptemplate-mailpit
+    restart: always
+    environment:
+      MP_SMTP_BIND_ADDR: "0.0.0.0:1025"
+      MP_UI_BIND_ADDR: "0.0.0.0:8025"
+      MP_MAX_MESSAGES: "500"
+    ports:
+      - "127.0.0.1:1025:1025" # SMTP
+      - "127.0.0.1:8025:8025" # web inbox
+    networks:
+      - apptemplate-network
+    healthcheck:
+      test: ["CMD", "/mailpit", "readyz"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+networks:
+  apptemplate-network:
+    driver: bridge

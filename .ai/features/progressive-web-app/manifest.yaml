@@ -1,0 +1,23 @@
+name: progressive-web-app
+title: Progressive Web App
+category: frontend
+status: released
+description: >
+  Offline-capable, installable web app: a web app manifest plus a service worker
+  registered at boot. Install is handled natively by the browser via the manifest
+  (there is no custom install-prompt component).
+copierFlag: null
+relatedTasks: []
+dependsOn: ["ui-component-library"]
+removableInDerivedRepo: false
+removalTaskId: null
+files:
+  - path: "src/frontend/main/public/manifest.json"
+    role: manifest
+  - path: "src/frontend/main/public/sw.js"
+    role: service-worker
+  - path: "src/frontend/main/vite.config.ts"
+    role: config
+tags: [pwa, offline, install, manifest]
+owners:
+  - "group:platform"

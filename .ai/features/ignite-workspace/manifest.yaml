@@ -1,0 +1,30 @@
+name: ignite-workspace
+title: Ignite Workspace Compatibility
+category: infra
+status: released
+description: "Keeps the template runnable inside an NIE Ignite (Coder) workspace: Vite base/allowedHosts/HMR driven by the injected VITE_* environment, a dev-only window.__APP_TEMPLATE_CONFIG__ injection plugin, runtime-config URL and cookie-name overrides, a dependency-free /health liveness endpoint, and the ignite.manifest.json declaration of the workspace topology."
+copierFlag: null
+relatedTasks: []
+dependsOn: ["health-observability", "authentication"]
+removableInDerivedRepo: false
+removalTaskId: null
+files:
+  - path: "ignite.manifest.json"
+    role: owned
+  - path: "docs/IGNITE-INTEGRATION.md"
+    role: documentation
+  - path: "src/frontend/main/vite.config.ts"
+    role: config
+  - path: "src/frontend/auth/vite.config.ts"
+    role: config
+  - path: "src/frontend/packages/shared/src/config/constants.ts"
+    role: config
+  - path: "src/frontend/packages/shared/src/config/constants.test.ts"
+    role: test
+  - path: "src/backend/API/Program.cs"
+    role: touched
+  - path: "src/backend/Auth/Program.cs"
+    role: touched
+tags: [ignite, coder, vite, preview, hmr, health]
+owners:
+  - "group:platform"

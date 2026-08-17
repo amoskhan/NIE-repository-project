@@ -1,0 +1,16 @@
+{
+  "templateName": "App Template",
+  "templateVersion": "2026.07.31.1",
+  "releasedAtSgt": "2026-07-31T09:00:00+08:00",
+  "timezone": "Asia/Singapore",
+  "timezoneNote": "Configurable default, not a hard requirement. Release versions use YYYY.MM.DD.N stamped in this timezone; change it together with the app's regional settings (locale default is en-SG).",
+  "releaseType": "baseline",
+  "breaking": false,
+  "sourceCommit": null,
+  "sourceTemplateRepo": "https://github.com/your-org/app-template.git",
+  "releaseNotesPath": "docs/template-releases/2026.07.31.1.md",
+  "sourceReleaseNotes": null,
+  "adoptedAtSgt": null,
+  "appliedTasks": ["0001"],
+  "localNotes": []
+}

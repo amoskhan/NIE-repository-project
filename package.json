@@ -1,0 +1,31 @@
+{
+  "name": "apptemplate-root",
+  "private": true,
+  "description": "Repo-root tooling for App Template: git hooks and the template governance scripts. The application code lives in src/frontend (pnpm workspace) and src/backend (.NET solution).",
+  "scripts": {
+    "prepare": "husky",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "//template-tools": "The three template-governance scripts below are TEMPLATE-REPO-ONLY: copier.yml excludes tools/template-versioning, tools/template-audit and tools/template-align from scaffolded projects. They therefore run through the _template-tool guard, which prints a skip notice and exits 0 when the tool (or Python) is absent — same idea as .husky/pre-commit — so they never break a student's project.",
+    "_template-tool": "node -e \"var a=process.argv.slice(1),t=a[0],fs=require('fs'),cp=require('child_process');if(!fs.existsSync(t)){console.log('[skip] '+t+' is template-repo-only and is not part of this project.');process.exit(0)}var i,r,py=['python','python3'];for(i=0;i<py.length;i++){r=cp.spawnSync(py[i],a,{stdio:'inherit'});if(r.error&&r.error.code==='ENOENT')continue;process.exit(r.status===null?1:r.status)}console.log('[skip] no python interpreter on PATH.')\"",
+    "validate:template-version": "npm run --silent _template-tool -- tools/template-versioning/release.py validate",
+    "audit:template": "npm run --silent _template-tool -- tools/template-audit/audit.py --repo .",
+    "align:template": "npm run --silent _template-tool -- tools/template-align/align.py"
+  },
+  "devDependencies": {
+    "husky": "^9.1.7",
+    "lint-staged": "^16.1.0",
+    "prettier": "^3.9.6"
+  },
+  "lint-staged": {
+    "src/frontend/**/*.{ts,vue}": [
+      "prettier --write --ignore-unknown"
+    ],
+    "src/frontend/**/*.{css,json,md}": [
+      "prettier --write --ignore-unknown"
+    ],
+    "src/backend/**/*.cs": [
+      "dotnet format src/backend --include"
+    ]
+  }
+}

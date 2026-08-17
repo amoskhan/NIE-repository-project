@@ -1,0 +1,32 @@
+name: ui-component-library
+title: UI Component Library
+category: frontend
+status: released
+description: "The @apptemplate/ui private workspace package: primitive + composite Vue components, theme runtime, and shared utilities."
+copierFlag: null
+relatedTasks: []
+dependsOn: []
+removableInDerivedRepo: false
+removalTaskId: null
+files:
+  - path: "src/frontend/packages/ui/package.json"
+    role: owned
+  - path: "src/frontend/packages/ui/tsconfig.json"
+    role: owned
+  - path: "src/frontend/packages/ui/vite.config.ts"
+    role: owned
+  - path: "src/frontend/packages/ui/tailwind.config.js"
+    role: owned
+  - path: "src/frontend/packages/ui/postcss.config.js"
+    role: owned
+  - path: "src/frontend/packages/ui/README.md"
+    role: owned
+  - path: "src/frontend/packages/ui/src/index.ts"
+    role: owned
+  - path: "src/frontend/packages/ui/src/lib/utils.ts"
+    role: owned
+  - path: "src/frontend/packages/ui/src/styles/globals.css"
+    role: owned
+tags: []
+owners:
+  - "group:platform"

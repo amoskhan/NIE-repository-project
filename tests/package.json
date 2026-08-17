@@ -1,0 +1,35 @@
+{
+  "name": "app-template-e2e-tests",
+  "version": "1.0.0",
+  "description": "End-to-end and API tests for the App Template application",
+  "packageManager": "pnpm@10.33.0",
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "test:debug": "playwright test --debug",
+    "test:ui": "playwright test --ui",
+    "test:report": "playwright show-report",
+    "install-browsers": "playwright install chromium",
+    "test:api": "playwright test specs/auth specs/api",
+    "test:api:auth": "playwright test specs/auth specs/api/auth-local-identity.api.spec.ts",
+    "test:api:main": "playwright test specs/api",
+    "test:e2e": "playwright test specs/e2e",
+    "test:e2e:auth": "playwright test specs/e2e/auth.e2e.spec.ts",
+    "test:e2e:dashboard": "playwright test specs/e2e/dashboard.e2e.spec.ts",
+    "test:all": "playwright test",
+    "test:ci": "playwright test --reporter=github",
+    "test:smoke": "playwright test specs/auth/login.api.spec.ts specs/e2e/auth.e2e.spec.ts",
+    "dev:api": "cross-env TEST_ENV=dev playwright test specs/auth specs/api",
+    "dev:e2e": "cross-env TEST_ENV=dev playwright test specs/e2e",
+    "dev:smoke": "cross-env TEST_ENV=dev playwright test specs/auth/login.api.spec.ts specs/e2e/auth.e2e.spec.ts"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.58.2",
+    "cross-env": "^10.1.0",
+    "dotenv": "^17.3.1",
+    "tsx": "^4.21.0"
+  },
+  "engines": {
+    "node": ">=22.12.0"
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "$schema": "./_TEMPLATE/index.schema.json",
+  "lastUpdated": "2026-07-31T09:00:00+08:00",
+  "tasks": [
+    {
+      "taskId": "0001",
+      "slug": "baseline",
+      "title": "Adopt the App Template baseline",
+      "type": "feature",
+      "breaking": false,
+      "runOnClone": true,
+      "status": "released",
+      "minTemplateVersion": null,
+      "templateVersionAfterApply": "2026.07.31.1",
+      "dependsOn": [],
+      "supersedes": null,
+      "summary": "No-op adoption marker for the 2026.07.31.1 baseline: ensures the repo carries .app-template-version.json so later tasks have a version anchor. Freshly scaffolded projects already satisfy it.",
+      "path": ".ai/tasks/0001-baseline"
+    }
+  ]
+}

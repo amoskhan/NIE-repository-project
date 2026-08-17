@@ -1,0 +1,60 @@
+# Staging environment. Merged on top of values.yaml.
+appKey: apptemplate
+environment: stg
+hostingMode: path
+hostName: apps.stg.example.com
+pathPrefix: MYAPP
+runtimeSecretName: runtime-config
+
+# Argo Rollouts CRDs are optional — see values.yaml.
+rollouts:
+  enabled: false
+
+workloads:
+  api:
+    # Only needed if the pod assumes a cloud IAM role (e.g. IRSA / Workload
+    # Identity) for S3 file storage. Delete it otherwise.
+    serviceAccountName: apptemplate-api
+    image:
+      repository: registry.example.com/app-template/api
+      tag: latest
+    containerPort: 8080
+    servicePort: 80
+    healthPath: /health
+    ingressEnabled: true
+    pathSegment: api-main
+    strategy: RollingUpdate
+    replicas: 1
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        memory: 512Mi
+    hpa:
+      minReplicas: 1
+      maxReplicas: 3
+      cpuUtilization: 70
+      memoryUtilization: 75
+  auth-api:
+    image:
+      repository: registry.example.com/app-template/auth-api
+      tag: latest
+    containerPort: 8080
+    servicePort: 80
+    healthPath: /health
+    ingressEnabled: true
+    pathSegment: api-auth
+    strategy: RollingUpdate
+    replicas: 1
+    resources:
+      requests:
+        cpu: 50m
+        memory: 128Mi
+      limits:
+        memory: 256Mi
+    hpa:
+      minReplicas: 1
+      maxReplicas: 3
+      cpuUtilization: 70
+      memoryUtilization: 75

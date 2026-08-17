@@ -1,0 +1,25 @@
+name: feedback-widget
+title: Feedback Widget
+category: frontend
+status: released
+description: "A floating thumbs-up/down feedback widget mounted on every signed-in page, built on the reusable AppFeedbackHub UI component. Ships the frontend half only — the project supplies the POST /api/Feedback/Submit receiver, or removes the widget."
+copierFlag: null
+relatedTasks: []
+dependsOn: []
+removableInDerivedRepo: true
+removalTaskId: null
+files:
+  - path: "src/frontend/main/src/components/feedback/FloatingFeedbackButton.vue"
+    role: component
+  - path: "src/frontend/main/src/services/feedbackService.ts"
+    role: client
+  - path: "src/frontend/packages/ui/src/components/composite/app-feedback/AppFeedbackHub.vue"
+    role: component
+  - path: "src/frontend/packages/ui/src/components/composite/app-feedback/index.ts"
+    role: owned
+tags:
+  - feedback
+  - vue
+  - ux
+owners:
+  - "group:platform"

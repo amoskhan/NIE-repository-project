@@ -1,0 +1,69 @@
+# Auth API image (ASP.NET Core, local identity provider + Valkey sessions).
+#
+# Build context is the REPOSITORY ROOT:
+#   docker build -f build/Dockerfile.auth -t apptemplate-auth-api .
+#
+# Alpine-based: this service has no native dependencies beyond ICU.
+
+# Build stage
+FROM mcr.microsoft.com/dotnet/sdk:10.0-alpine AS build
+WORKDIR /src
+
+# Copy project files and restore as distinct layers for better caching
+COPY ["src/backend/Directory.Build.props", "./"]
+COPY ["src/backend/global.json", "./"]
+COPY ["src/backend/Auth/Auth.csproj", "Auth/"]
+COPY ["src/backend/Libraries/Data/Data.csproj", "Libraries/Data/"]
+COPY ["src/backend/Libraries/Domain/Domain.csproj", "Libraries/Domain/"]
+COPY ["src/backend/Libraries/Services/Services.csproj", "Libraries/Services/"]
+COPY ["src/backend/Libraries/Shared/Shared.csproj", "Libraries/Shared/"]
+
+# Restore dependencies
+RUN dotnet restore "Auth/Auth.csproj" --use-current-runtime
+
+# Copy source code
+COPY ["src/backend/Auth/", "Auth/"]
+COPY ["src/backend/Libraries/", "Libraries/"]
+
+# Publish with optimizations
+RUN dotnet publish "Auth/Auth.csproj" \
+    -c Release \
+    -o /app/publish \
+    --use-current-runtime \
+    --self-contained false \
+    --no-restore \
+    /p:PublishTrimmed=false \
+    /p:PublishSingleFile=false
+
+# Remove unnecessary files
+RUN rm -f /app/publish/appsettings.json \
+    && rm -f /app/publish/*.pdb \
+    && find /app/publish -name "*.xml" -delete
+
+# Runtime stage
+FROM mcr.microsoft.com/dotnet/aspnet:10.0-alpine AS runtime
+WORKDIR /app
+
+# Install runtime dependencies and keep the runtime container non-root.
+USER root
+RUN apk add --no-cache \
+    icu-libs \
+    && chown -R 65532:65532 /app
+
+# Copy published app
+COPY --from=build --chown=65532:65532 /app/publish .
+
+# Set environment variables
+ENV ASPNETCORE_URLS=http://+:8080 \
+    DOTNET_RUNNING_IN_CONTAINER=true \
+    DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=false
+
+# Switch to non-root user
+USER 65532:65532
+
+EXPOSE 8080
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+    CMD wget -q -O - http://localhost:8080/health/live || exit 1
+
+ENTRYPOINT ["dotnet", "Auth.dll"]
