@@ -1,2 +1,2 @@
-export { default as AppFileUploadField } from "./AppFileUploadField.vue";
-export type { UploadedFileItem } from "./AppFileUploadField.vue";
+export { default as NieFileUploadField } from "./NieFileUploadField.vue";
+export type { UploadedFileItem } from "./NieFileUploadField.vue";

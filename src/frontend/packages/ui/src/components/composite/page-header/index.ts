@@ -1,1 +1,1 @@
-export { default as AppPageHeader } from "./AppPageHeader.vue";
+export { default as NiePageHeader } from "./NiePageHeader.vue";

@@ -1,1 +1,1 @@
-export { default as AppSwitch } from "./AppSwitch.vue";
+export { default as NieSwitch } from "./NieSwitch.vue";

@@ -1,0 +1,43 @@
+# Backstage catalog entry for the NIE Template repo itself.
+#
+# Register this in your Backstage instance via the Software Catalog →
+# "Register Existing Component" with URL pointing to this file.
+#
+#   https://github.com/NIE/nie-template/blob/main/catalog-info.yaml
+#
+# Once registered, the template appears in the catalog as a "library" type,
+# and the SoftwareTemplate kind below makes it consumable from
+# Backstage's Software Templates UI.
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: nie-template
+  title: NIE Template
+  description: >-
+    .NET 10 + Vue 3 starter template with task-oriented versioning, AI-driven
+    alignment, and a fleet-aware audit/registry pipeline.
+  annotations:
+    github.com/project-slug: NIE/nie-template
+    backstage.io/source-location: url:https://github.com/NIE/nie-template
+    backstage.io/techdocs-ref: dir:.
+  tags:
+    - dotnet
+    - vue
+    - template
+    - copier
+    - nie
+  links:
+    - url: https://github.com/NIE/nie-template/blob/main/docs/template-distribution.md
+      title: Distribution model
+      icon: docs
+    - url: https://github.com/NIE/nie-template/blob/main/.ai/README.md
+      title: AI agent instructions
+      icon: docs
+    - url: https://github.com/NIE/nie-template/blob/main/tools/README.md
+      title: Tools (Python + Copier)
+      icon: docs
+spec:
+  type: library
+  lifecycle: production
+  owner: group:nie-platform
+  system: developer-platform

@@ -1,1 +1,1 @@
-export { default as AppLaunchpadProfileMenu } from "./AppLaunchpadProfileMenu.vue";
+export { default as NieLaunchpadProfileMenu } from "./NieLaunchpadProfileMenu.vue";

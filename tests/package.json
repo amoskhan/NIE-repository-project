@@ -1,9 +1,10 @@
 {
-  "name": "app-template-e2e-tests",
+  "name": "application-e2e-tests",
   "version": "1.0.0",
-  "description": "End-to-end and API tests for the App Template application",
+  "description": "End-to-end and API tests for NIE Template application",
   "packageManager": "pnpm@10.33.0",
   "scripts": {
+    "type-check": "tsc --noEmit",
     "test": "playwright test",
     "test:headed": "playwright test --headed",
     "test:debug": "playwright test --debug",
@@ -11,7 +12,7 @@
     "test:report": "playwright show-report",
     "install-browsers": "playwright install chromium",
     "test:api": "playwright test specs/auth specs/api",
-    "test:api:auth": "playwright test specs/auth specs/api/auth-local-identity.api.spec.ts",
+    "test:api:auth": "playwright test specs/auth",
     "test:api:main": "playwright test specs/api",
     "test:e2e": "playwright test specs/e2e",
     "test:e2e:auth": "playwright test specs/e2e/auth.e2e.spec.ts",
@@ -25,11 +26,13 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.58.2",
+    "@types/node": "^25.5.0",
     "cross-env": "^10.1.0",
     "dotenv": "^17.3.1",
-    "tsx": "^4.21.0"
+    "tsx": "^4.21.0",
+    "typescript": "^6.0.2"
   },
   "engines": {
-    "node": ">=22.12.0"
+    "node": ">=24.15.0"
   }
 }

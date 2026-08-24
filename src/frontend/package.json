@@ -1,43 +1,54 @@
 {
-  "name": "apptemplate-workspace",
+  "name": "nie-application-workspace",
   "private": true,
   "version": "1.0.0",
   "type": "module",
-  "description": "AppTemplate frontend workspace - monorepo structure",
+  "description": "NIE application frontend workspace",
   "packageManager": "pnpm@10.33.0",
   "scripts": {
     "dev": "pnpm run -r --parallel dev",
-    "dev:main": "pnpm --filter main dev",
-    "dev:auth": "pnpm --filter auth dev",
-    "build": "pnpm run build:ui && pnpm run build:shared && pnpm run build:main && pnpm run build:auth",
-    "build:ui": "pnpm --filter @apptemplate/ui build",
-    "build:shared": "pnpm --filter @apptemplate/shared build",
-    "build:main": "pnpm --filter main build:production",
-    "build:auth": "pnpm --filter auth build:production",
+    "dev:main": "pnpm --filter @nie/main dev",
+    "dev:auth": "pnpm --filter @nie/auth dev",
+    "build": "pnpm run build:contracts && pnpm run build:ui && pnpm run build:platform && pnpm run build:main && pnpm run build:auth",
+    "build:contracts": "pnpm --filter @nie/contracts build",
+    "build:ui": "pnpm --filter @nie/ui build",
+    "build:platform": "pnpm --filter @nie/platform build",
+    "build:main": "pnpm --filter @nie/main build:production",
+    "build:auth": "pnpm --filter @nie/auth build:production",
     "type-check": "pnpm run -r type-check",
-    "test:unit": "vitest run",
-    "test:unit:watch": "vitest",
+    "test": "pnpm run -r test",
+    "test:coverage": "pnpm run -r test:coverage",
     "generate:api": "node scripts/generate-api-types.mjs",
     "clean": "pnpm run -r clean && rm -rf node_modules",
-    "//lint": "One flat config (eslint.config.js) covers all four workspace packages, so lint runs as a single process from here rather than recursing per package.",
-    "lint": "eslint .",
-    "lint:fix": "eslint . --fix"
+    "lint": "eslint . --max-warnings 0 --suppressions-location eslint-suppressions.json",
+    "lint:prune": "eslint . --prune-suppressions --suppressions-location eslint-suppressions.json"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "@vue/test-utils": "^2.4.11",
+    "@stryker-mutator/api": "9.6.1",
+    "@stryker-mutator/core": "9.6.1",
+    "@stryker-mutator/vitest-runner": "9.6.1",
     "concurrently": "^9.2.1",
     "eslint": "^10.8.0",
-    "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-vue": "^10.10.0",
-    "globals": "^17.8.0",
-    "jsdom": "^30.0.1",
-    "typescript-eslint": "^8.65.0",
-    "vitest": "^4.1.10",
-    "vue-eslint-parser": "^10.4.1"
+    "globals": "^17.9.0",
+    "typescript-eslint": "^8.65.0"
+  },
+  "pnpm": {
+    "overrides": {
+      "brace-expansion@>=2.0.0 <2.1.4": "2.1.4",
+      "brace-expansion@>=3.0.0 <5.0.9": "5.0.9",
+      "fast-uri@>=3.0.0 <3.1.5": "3.1.5",
+      "lodash@>=4.0.0 <4.18.0": "4.18.1",
+      "nanoid@>=3.0.0 <3.3.17": "3.3.18",
+      "qs@>=6.11.1 <=6.15.1": "6.15.2",
+      "rollup@>=4.0.0 <4.59.0": "4.62.4",
+      "shell-quote@>=1.1.0 <1.9.0": "1.10.0",
+      "ws@>=7.0.0 <7.5.11": "7.5.11"
+    }
   },
   "engines": {
-    "node": ">=22.12.0",
+    "node": ">=24.15.0",
     "pnpm": ">=10.33.0"
   }
 }

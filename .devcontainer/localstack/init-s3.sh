@@ -4,7 +4,7 @@
 # Idempotent: re-running on an existing bucket is a no-op.
 set -eu
 
-BUCKET="${LOCAL_S3_BUCKET:-apptemplate-local}"
+BUCKET="${LOCAL_S3_BUCKET:-application-local}"
 
 awslocal s3 mb "s3://${BUCKET}" 2>/dev/null || true
 # Permissive CORS so a local frontend can read pre-signed/static objects during dev.

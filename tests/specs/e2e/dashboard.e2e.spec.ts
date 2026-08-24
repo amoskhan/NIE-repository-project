@@ -123,27 +123,24 @@ test.describe("E2E - Dashboard", () => {
     expect(cardCount).toBeGreaterThanOrEqual(0);
   });
 
-  test("should handle navigation to sample model list", async ({ page }) => {
+  test("should navigate to the Procurement vendor list", async ({ page }) => {
     // Open mobile menu if needed
     await openMobileMenuIfNeeded(page);
 
-    // Look for navigation link to sample model
-    const sampleModelLink = page
+    const vendorLink = page
       .locator(
-        'a[href*="sample-model"], button:has-text("Sample Model"), [class*="nav"]:has-text("Sample")',
+        'a[href*="vendors"], button:has-text("Vendors"), [class*="nav"]:has-text("Vendors")',
       )
       .first();
 
-    const isVisible = await sampleModelLink.isVisible().catch(() => false);
+    const isVisible = await vendorLink.isVisible().catch(() => false);
 
     if (isVisible) {
-      await sampleModelLink.click();
-      await page.waitForTimeout(2000);
+      await vendorLink.click();
 
-      // Should navigate to sample model page
-      expect(page.url()).toContain("sample-model");
+      await expect(page).toHaveURL(/vendors/);
     } else {
-      console.log("Sample model navigation link not found - skipping");
+      console.log("Vendor navigation link not found - skipping");
       test.skip(true, "Navigation link not found");
     }
   });

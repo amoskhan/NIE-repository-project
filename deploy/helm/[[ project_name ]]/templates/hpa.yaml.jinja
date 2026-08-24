@@ -1,0 +1,2 @@
+[% set source %][% include "deploy/helm/application/templates/hpa.yaml" %][% endset %]
+[[ source | replace("application", project_name) -]]

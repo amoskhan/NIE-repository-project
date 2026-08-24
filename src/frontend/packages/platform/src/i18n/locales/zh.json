@@ -1,0 +1,45 @@
+{
+  "app": {
+    "title": "NIE 模板",
+    "loading": "加载中…",
+    "save": "保存",
+    "cancel": "取消",
+    "delete": "删除",
+    "edit": "编辑",
+    "create": "创建",
+    "search": "搜索",
+    "noResults": "未找到结果",
+    "confirm": "确认",
+    "back": "返回",
+    "next": "下一步",
+    "yes": "是",
+    "no": "否"
+  },
+  "auth": {
+    "login": "登录",
+    "logout": "退出",
+    "username": "用户名",
+    "password": "密码",
+    "loginButton": "登录",
+    "loginFailed": "用户名或密码无效",
+    "sessionExpired": "您的会话已过期，请重新登录。"
+  },
+  "nav": {
+    "dashboard": "仪表盘",
+    "settings": "设置",
+    "profile": "个人资料"
+  },
+  "validation": {
+    "required": "此字段为必填项",
+    "minLength": "至少需要 {min} 个字符",
+    "maxLength": "最多 {max} 个字符",
+    "email": "请输入有效的电子邮件地址",
+    "numeric": "必须是数字"
+  },
+  "error": {
+    "generic": "出了点问题，请重试。",
+    "notFound": "页面未找到",
+    "forbidden": "您没有权限访问此页面",
+    "networkError": "网络错误，请检查您的连接。"
+  }
+}

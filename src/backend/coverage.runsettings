@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Code coverage settings for Microsoft.Testing.Extensions.CodeCoverage, passed to
+  `dotnet test` via its coverage-settings option. The schema is the dotnet-coverage
+  settings format documented at
+  https://learn.microsoft.com/dotnet/core/additional-tools/dotnet-coverage#settings
+
+  Purpose: keep the coverage number honest. Generated code, EF migrations and
+  the composition roots are excluded so the percentage reflects code a test
+  could meaningfully assert on, which is what NIE-TEST-002 asks us to measure.
+  Test assemblies are already excluded by default (IncludeTestAssembly=false).
+-->
+<Configuration>
+  <CodeCoverage>
+
+    <ModulePaths>
+      <Include>
+        <ModulePath>.*\.dll$</ModulePath>
+      </Include>
+      <Exclude>
+        <!-- Test projects and their support assemblies. -->
+        <ModulePath>.*\.Tests\.dll$</ModulePath>
+        <ModulePath>.*xunit.*\.dll$</ModulePath>
+        <ModulePath>.*Microsoft\.Testing\..*\.dll$</ModulePath>
+        <ModulePath>.*NSubstitute.*\.dll$</ModulePath>
+      </Exclude>
+    </ModulePaths>
+
+    <Sources>
+      <Exclude>
+        <!-- EF Core migrations and model snapshots are generated scaffolding. -->
+        <Source>.*[\\/]Migrations[\\/].*</Source>
+        <!-- Source-generator and build output. -->
+        <Source>.*[\\/]obj[\\/].*</Source>
+        <Source>.*\.g\.cs$</Source>
+        <Source>.*\.g\.i\.cs$</Source>
+        <!-- Protobuf/gRPC generated clients and messages. -->
+        <Source>.*[\\/]Protos[\\/].*</Source>
+      </Exclude>
+    </Sources>
+
+    <Attributes>
+      <Exclude>
+        <Attribute>^System\.Diagnostics\.DebuggerHiddenAttribute$</Attribute>
+        <Attribute>^System\.Diagnostics\.DebuggerNonUserCodeAttribute$</Attribute>
+        <Attribute>^System\.CodeDom\.Compiler\.GeneratedCodeAttribute$</Attribute>
+        <Attribute>^System\.Diagnostics\.CodeAnalysis\.ExcludeFromCodeCoverageAttribute$</Attribute>
+      </Exclude>
+    </Attributes>
+
+    <!--
+      Deliberately NOT excluding CompilerGeneratedAttribute: doing so would drop
+      every async method, iterator and auto-property from the report, which
+      would inflate the coverage percentage rather than measure it.
+    -->
+
+    <EnableStaticManagedInstrumentation>True</EnableStaticManagedInstrumentation>
+    <EnableDynamicManagedInstrumentation>True</EnableDynamicManagedInstrumentation>
+
+  </CodeCoverage>
+</Configuration>

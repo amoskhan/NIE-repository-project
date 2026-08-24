@@ -1,0 +1,7 @@
+@import "tailwindcss";
+@import "@nie/ui/styles";
+@config "../tailwind.config.js";
+
+body {
+  min-width: 320px;
+}

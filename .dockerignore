@@ -1,14 +1,7 @@
-# Build context for all three images is the REPOSITORY ROOT
-# (see build/Dockerfile.*), so keep the context small.
 .git/
 .github/
 .vscode/
 temp/
-
-# Bind mounts created by build/docker-compose.yml on a deployment host.
-# Without these, building on that host would upload the whole database.
-build/pgdata/
-build/uploads/
 
 **/bin/
 **/obj/

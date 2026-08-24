@@ -1,1 +1,1 @@
-export { default as AppSmartFilterDropdown } from "./AppSmartFilterDropdown.vue";
+export { default as NieSmartFilterDropdown } from "./NieSmartFilterDropdown.vue";

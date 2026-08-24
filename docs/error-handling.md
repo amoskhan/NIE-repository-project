@@ -1,31 +1,25 @@
 # Error Handling Specification
 
-> **This is a PERMANENT technical document.** It defines the standard error handling patterns for App Template projects. Do not change the core patterns — the middleware and the frontend both depend on them.
+> **This is a PERMANENT technical document.** It defines the standard error handling patterns for all NIE Template projects. Do not modify the core patterns — they are enforced by the template architecture.
 
 ---
 
-## The default: return the DTO, use the status code
+## Standard API Response Wrapper
 
-The built-in controllers return the DTO directly and let the HTTP status code carry the outcome. This is the pattern to copy:
+All API responses use the `ApiResponse<T>` wrapper from `API/Models/ApiResponse.cs`:
 
 ```csharp
 // Success
-return Ok(_mapper.Map<EntityDto>(entity));
-return Ok(_mapper.Map<List<EntityDto>>(items));
+return Ok(ApiResponse<EntityDto>.Ok(dto));
+return Ok(ApiResponse<List<EntityDto>>.Ok(items));
 
 // Client errors
-return NotFound("Entity not found");
-return BadRequest("Name is required");
-```
-
-An optional envelope, `ApiResponse<T>` in `API/Models/ApiResponse.cs`, is available if your project prefers a uniform body on every response:
-
-```csharp
-return Ok(ApiResponse<EntityDto>.Ok(dto, "Entity created successfully"));
 return Ok(ApiResponse<EntityDto>.NotFound("Entity not found"));
-```
+return Ok(ApiResponse<EntityDto>.BadRequest("Invalid input"));
 
-Pick one and stay consistent across your project. Mixing the two means every frontend caller has to guess which shape it is unwrapping.
+// With message
+return Ok(ApiResponse<EntityDto>.Ok(dto, "Entity created successfully"));
+```
 
 ## HTTP Status Code Usage
 
@@ -35,7 +29,7 @@ Pick one and stay consistent across your project. Mixing the two means every fro
 | `204 No Content`            | Successful DELETE                          | `return NoContent();`                     |
 | `400 Bad Request`           | Validation failure, invalid input          | Missing required fields, invalid format   |
 | `401 Unauthorized`          | No valid session                           | Handled by SessionValidationMiddleware    |
-| `403 Forbidden`             | Valid session but insufficient permissions | `[RequireAccessFunction]` attribute       |
+| `403 Forbidden`             | Valid session but insufficient permissions | RequirePermission attribute               |
 | `404 Not Found`             | Entity does not exist                      | GET/Edit/Delete with invalid ID           |
 | `500 Internal Server Error` | Unhandled exception                        | Caught by ExceptionHandlingMiddleware     |
 
@@ -44,9 +38,8 @@ Pick one and stay consistent across your project. Mixing the two means every fro
 ### GET by ID
 
 ```csharp
-[HttpGet("{id}")]
-[RequireAccessFunction(AccessFunctionCodes.Api.YourEntityRead)]
-public async Task<ActionResult<YourEntityDto>> Get(int id)
+[HttpGet("{id:guid}")]
+public async Task<ActionResult<YourEntityDto>> Get(Guid id)
 {
     var item = await _service.GetByIdAsync(id);
     if (item == null)
@@ -59,38 +52,31 @@ public async Task<ActionResult<YourEntityDto>> Get(int id)
 
 ```csharp
 [HttpPost]
-[RequireAccessFunction(AccessFunctionCodes.Api.YourEntityManage)]
 public async Task<ActionResult<YourEntityDto>> Edit([FromBody] YourEntityDto dto)
 {
-    if (dto.Id <= 0)
+    if (dto.Id == Guid.Empty)
         return BadRequest("Invalid ID");
 
     var existing = await _service.GetByIdAsync(dto.Id);
     if (existing == null)
         return NotFound("Item not found");
 
-    // Assign the fields the caller is allowed to change, one at a time.
-    existing.Name = dto.Name;
-    existing.IsActive = dto.IsActive;
-
+    _mapper.Map(dto, existing);
     var updated = await _service.SaveOrUpdateAsync(existing);
     return Ok(_mapper.Map<YourEntityDto>(updated));
 }
 ```
 
-> **Do not write `_mapper.Map(dto, existing)` here.** Projecting a request body wholesale onto a loaded entity lets a caller overwrite audit columns, owner ids, and anything else you never meant to expose. Explicit assignment is the whole point of this pattern.
-
 ### Delete
 
 ```csharp
-[HttpPost("Delete/{id}")]
-[RequireAccessFunction(AccessFunctionCodes.Api.YourEntityManage)]
-public async Task<ActionResult> Delete(int id)
+[HttpDelete("{id:guid}")]
+public async Task<ActionResult> Delete(Guid id)
 {
     var result = await _service.DeleteAsync(id);
     if (!result)
         return NotFound("Item not found");
-    return Ok();
+    return NoContent();
 }
 ```
 
@@ -162,9 +148,8 @@ const fetchItems = async () => {
 3. **Business logic errors go in services** — controllers only handle HTTP-level concerns
 4. **Don't expose internal details** — error messages to users should be friendly, not stack traces
 5. **Always handle loading states** — show a spinner while data loads, handle the error if it fails
-6. **Delete operations require confirmation** — show a confirm dialog (`ConfirmDialog`, or `AppConfirmDialog` from `@apptemplate/ui`) before deleting
+6. **Delete operations require confirmation** — use `ConfirmDialog` before deleting
 7. **Log with `ILogger`** — use `_logger.LogError()` for errors, `_logger.LogWarning()` for recoverable issues
-8. **Never log a credential, token, or session id** — not in an error message, not in a debug line, not in a breadcrumb
 
 ## Retry Policy (For External Integrations)
 

@@ -16,12 +16,14 @@ import type {
 } from "./types";
 
 const STORAGE_KEYS = {
-  mode: "apptemplate_theme_mode",
-  preset: "apptemplate_theme_preset",
-  density: "apptemplate_theme_density",
-  scenario: "apptemplate_theme_scenario",
-  layout: "apptemplate_theme_layout",
-  preference: "apptemplate_theme_preference",
+  mode: "nie_template_theme_mode",
+  preset: "nie_template_theme_preset",
+  density: "nie_template_theme_density",
+  scenario: "nie_template_theme_scenario",
+  layout: "nie_template_theme_layout",
+  preference: "nie_template_theme_preference",
+  radius: "nie_template_theme_radius",
+  motion: "nie_template_theme_motion",
 };
 
 const defaultConfig: AppThemeConfig = {
@@ -35,7 +37,7 @@ const defaultConfig: AppThemeConfig = {
   defaultDensity: "comfortable",
   defaultRadius: "soft",
   defaultMotion: "expressive",
-  brandLabel: "App Template",
+  brandLabel: "NIE Template",
 };
 
 const mode = ref<ThemeMode>("light");
@@ -46,7 +48,7 @@ const scenario = ref<AppScenario>("admin");
 const layoutVariant = ref<LayoutVariant>("sidebar-admin");
 const radius = ref<ThemeRadius>("soft");
 const motion = ref<ThemeMotion>("expressive");
-const brandLabel = ref("App Template");
+const brandLabel = ref("NIE Template");
 
 const appConfig = ref<AppThemeConfig>(defaultConfig);
 const initialized = ref(false);
@@ -84,7 +86,19 @@ function clampDensity(value: unknown): ThemeDensity {
 function clampPreference(value: unknown): ThemePreference {
   return value === "system" || value === "dark" || value === "light"
     ? value
-    : (appConfig.value.defaultPreference ?? "light");
+    : appConfig.value.defaultPreference ?? "light";
+}
+
+function clampRadius(value: unknown): ThemeRadius {
+  return value === "rounded" || value === "sharp" || value === "soft"
+    ? value
+    : appConfig.value.defaultRadius ?? "soft";
+}
+
+function clampMotion(value: unknown): ThemeMotion {
+  return value === "reduced" || value === "expressive"
+    ? value
+    : appConfig.value.defaultMotion ?? "expressive";
 }
 
 function clampScenario(value: unknown): AppScenario {
@@ -104,10 +118,10 @@ function clampLayout(
   nextPreset: ThemePresetId,
 ): LayoutVariant {
   const manifest = getThemeManifest(nextPreset);
-  const scenarioLayouts = manifest.layoutVariants[nextScenario] ??
-    manifest.layoutVariants[
-      appConfig.value.defaultScenario ?? nextScenario
-    ] ?? [appConfig.value.defaultLayoutVariant];
+  const scenarioLayouts =
+    manifest.layoutVariants[nextScenario] ??
+    manifest.layoutVariants[appConfig.value.defaultScenario ?? nextScenario] ??
+    [appConfig.value.defaultLayoutVariant];
 
   if (
     typeof nextLayout === "string" &&
@@ -143,6 +157,8 @@ function persistState(): void {
     localStorage.setItem(STORAGE_KEYS.scenario, scenario.value);
     localStorage.setItem(STORAGE_KEYS.layout, layoutVariant.value);
     localStorage.setItem(STORAGE_KEYS.preference, themePreference.value);
+    localStorage.setItem(STORAGE_KEYS.radius, radius.value);
+    localStorage.setItem(STORAGE_KEYS.motion, motion.value);
   } catch {
     // Ignore storage write failures.
   }
@@ -177,23 +193,18 @@ function applyTokenBundle(bundle: ThemeTokenBundle): void {
     "--theme-color-surface-elevated",
     colors.surface.elevated,
   );
-  root.style.setProperty(
-    "--theme-color-surface-sidebar",
-    colors.surface.sidebar,
-  );
+  root.style.setProperty("--theme-color-surface-sidebar", colors.surface.sidebar);
   root.style.setProperty(
     "--theme-color-surface-sidebar-active",
     colors.surface.sidebarActive,
   );
-  root.style.setProperty(
-    "--theme-color-surface-overlay",
-    colors.surface.overlay,
-  );
+  root.style.setProperty("--theme-color-surface-overlay", colors.surface.overlay);
 
   root.style.setProperty("--theme-color-text-strong", colors.text.strong);
   root.style.setProperty("--theme-color-text-muted", colors.text.muted);
   root.style.setProperty("--theme-color-text-soft", colors.text.soft);
   root.style.setProperty("--theme-color-text-inverse", colors.text.inverse);
+  root.style.setProperty("--theme-color-on-brand", colors.brandContrast);
 
   root.style.setProperty("--theme-color-border-subtle", colors.border.subtle);
   root.style.setProperty("--theme-color-border-default", colors.border.default);
@@ -210,10 +221,7 @@ function applyTokenBundle(bundle: ThemeTokenBundle): void {
     colors.warning.contrast,
   );
   root.style.setProperty("--theme-color-danger-solid", colors.danger.solid);
-  root.style.setProperty(
-    "--theme-color-danger-contrast",
-    colors.danger.contrast,
-  );
+  root.style.setProperty("--theme-color-danger-contrast", colors.danger.contrast);
   root.style.setProperty("--theme-color-info-solid", colors.info.solid);
   root.style.setProperty("--theme-color-info-contrast", colors.info.contrast);
 
@@ -250,10 +258,7 @@ function applyTokenBundle(bundle: ThemeTokenBundle): void {
     "--theme-letter-spacing-normal",
     typography.tracking.normal,
   );
-  root.style.setProperty(
-    "--theme-letter-spacing-wide",
-    typography.tracking.wide,
-  );
+  root.style.setProperty("--theme-letter-spacing-wide", typography.tracking.wide);
 
   root.style.setProperty("--theme-shadow-soft", elevation.soft);
   root.style.setProperty("--theme-shadow-card", elevation.card);
@@ -265,10 +270,7 @@ function applyTokenBundle(bundle: ThemeTokenBundle): void {
     "--theme-shell-sidebar-collapsed-width",
     layout.sidebarCollapsedWidth,
   );
-  root.style.setProperty(
-    "--theme-shell-content-max-width",
-    layout.contentMaxWidth,
-  );
+  root.style.setProperty("--theme-shell-content-max-width", layout.contentMaxWidth);
   root.style.setProperty("--theme-shell-page-gutter", layout.pageGutter);
   root.style.setProperty("--theme-shell-panel-gap", layout.panelGap);
 
@@ -281,10 +283,7 @@ function applyTokenBundle(bundle: ThemeTokenBundle): void {
   root.style.setProperty("--color-surface", colors.surface.panel);
   root.style.setProperty("--color-surface-alt", colors.surface.subtle);
   root.style.setProperty("--color-sidebar", colors.surface.sidebar);
-  root.style.setProperty(
-    "--color-sidebar-active",
-    colors.surface.sidebarActive,
-  );
+  root.style.setProperty("--color-sidebar-active", colors.surface.sidebarActive);
   root.style.setProperty("--color-text", colors.text.strong);
   root.style.setProperty("--color-text-muted", colors.text.muted);
   root.style.setProperty("--color-border", colors.border.default);
@@ -324,9 +323,7 @@ function applyTheme(): void {
   if (metaThemeColor) {
     metaThemeColor.setAttribute(
       "content",
-      mode.value === "dark"
-        ? bundle.colors.surface.canvas
-        : bundle.colors.brand[600],
+      mode.value === "dark" ? bundle.colors.surface.canvas : bundle.colors.brand[600],
     );
   }
 
@@ -339,6 +336,8 @@ function applyTheme(): void {
         scenario: scenario.value,
         layoutVariant: layoutVariant.value,
         preference: themePreference.value,
+        radius: radius.value,
+        motion: motion.value,
       },
     }),
   );
@@ -354,6 +353,8 @@ function readStoredState(): void {
     preset.value,
   );
   themePreference.value = clampPreference(readStorage(STORAGE_KEYS.preference));
+  radius.value = clampRadius(readStorage(STORAGE_KEYS.radius));
+  motion.value = clampMotion(readStorage(STORAGE_KEYS.motion));
   mode.value =
     themePreference.value === "system"
       ? getSystemTheme()
@@ -451,11 +452,9 @@ export function initTheme(config?: AppThemeConfig): void {
   preset.value = clampPreset(preset.value);
   scenario.value = clampScenario(scenario.value);
   density.value = clampDensity(density.value);
-  layoutVariant.value = clampLayout(
-    layoutVariant.value,
-    scenario.value,
-    preset.value,
-  );
+  radius.value = clampRadius(radius.value);
+  motion.value = clampMotion(motion.value);
+  layoutVariant.value = clampLayout(layoutVariant.value, scenario.value, preset.value);
 
   if (!appConfig.value.allowedPresets.includes(preset.value)) {
     preset.value = appConfig.value.defaultPreset;
@@ -464,14 +463,26 @@ export function initTheme(config?: AppThemeConfig): void {
   applyTheme();
 }
 
-watch([mode, preset, density, scenario, layoutVariant, themePreference], () => {
-  if (syncingFromSystem) {
-    return;
-  }
+watch(
+  [
+    mode,
+    preset,
+    density,
+    scenario,
+    layoutVariant,
+    themePreference,
+    radius,
+    motion,
+  ],
+  () => {
+    if (syncingFromSystem) {
+      return;
+    }
 
-  persistState();
-  applyTheme();
-});
+    persistState();
+    applyTheme();
+  },
+);
 
 export const activeManifest = computed<ThemeManifest>(() =>
   getThemeManifest(preset.value),
@@ -483,9 +494,7 @@ export const availablePresets = computed(() =>
   ),
 );
 
-export const availableScenarios = computed(
-  () => appConfig.value.allowedScenarios,
-);
+export const availableScenarios = computed(() => appConfig.value.allowedScenarios);
 
 export const availableLayoutVariants = computed(() => {
   return (

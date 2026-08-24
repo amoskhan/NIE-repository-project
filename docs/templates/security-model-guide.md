@@ -21,9 +21,9 @@ Use **Mermaid.js** for auth flows and access matrices. Use Markdown tables for r
 
 ## How to Create
 
-### Step 1: Document the App Template Auth Baseline
+### Step 1: Document the NIE Template Auth Baseline
 
-Every App Template project inherits this baseline. Include the following in your `docs/security-model.md`:
+Every NIE Template project inherits this baseline. Include the following in your `docs/security-model.md`:
 
 ```markdown
 # Security Model
@@ -33,10 +33,10 @@ Every App Template project inherits this baseline. Include the following in your
 \`\`\`mermaid
 sequenceDiagram
 participant U as User
-participant AF as Auth Frontend (:8001)
+participant AF as Auth Frontend (:8002)
 participant AA as Auth API (:5001)
 participant R as Valkey
-participant MF as Main Frontend (:8002)
+participant MF as Main Frontend (:8001)
 participant MA as Main API (:5002)
 
     U->>AF: Navigate to app
@@ -123,18 +123,18 @@ public class EntityController : BaseController
 {
 // Public to authenticated users with permission
 [HttpGet]
-[RequireAccessFunction("api.entity.read")]
+[RequirePermission("entity.view")]
 public async Task<IActionResult> GetAll() { ... }
 
     // Owner or Admin check in service layer
-    [HttpPut("{id}")]
-    [RequireAccessFunction("api.entity.manage")]
-    public async Task<IActionResult> Edit(int id, EditDto dto) { ... }
+    [HttpPut("{id:guid}")]
+    [RequirePermission("entity.edit")]
+    public async Task<IActionResult> Edit(Guid id, EditDto dto) { ... }
 
     // Admin-only endpoint
-    [HttpDelete("{id}")]
-    [RequireAccessFunction("api.entity.manage")]
-    public async Task<IActionResult> Delete(int id) { ... }
+    [HttpDelete("{id:guid}")]
+    [RequirePermission("entity.delete")]
+    public async Task<IActionResult> Delete(Guid id) { ... }
 
 }
 \`\`\`
@@ -142,7 +142,7 @@ public async Task<IActionResult> GetAll() { ... }
 ### Service-Level Authorization
 
 \`\`\`csharp
-public async Task<ApiResponse<EntityDto>> EditAsync(int id, EditDto dto, string currentUser)
+public async Task<ApiResponse<EntityDto>> EditAsync(Guid id, EditDto dto, string currentUser)
 {
 var entity = await \_dbContext.Entities.FindAsync(id);
 
@@ -193,7 +193,7 @@ R = Read, W = Write, D = Delete
 ## Tips
 
 1. **Start with the permission matrix** — It's the most actionable artifact for AI code generation
-2. **Use the RequireAccessFunction attribute** — App Template's authorization attribute; every endpoint needs one
+2. **Use RequirePermission attribute** — NIE Template's custom authorization attribute
 3. **Service-level checks for ownership** — Controller-level checks for role/permission
 4. **Never trust the frontend** — All authorization enforced server-side
 5. **Audit sensitive operations** — Log who did what, when
@@ -209,3 +209,4 @@ R = Read, W = Write, D = Delete
 - [ ] Sensitive data handling documented
 - [ ] Session management configured
 - [ ] Controller authorization patterns shown
+

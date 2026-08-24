@@ -1,1 +1,2 @@
-export { default as AppBadge } from "./AppBadge.vue";
+export { default as NieBadge } from "./NieBadge.vue";
+export type { NieBadgeVariant } from "./NieBadge.vue";

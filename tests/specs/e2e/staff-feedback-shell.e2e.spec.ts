@@ -1,18 +1,18 @@
 import { expect, test, type Page } from "@playwright/test";
-import { CookieNames } from "../fixtures/cookie-names";
+import { TestConfig } from "../fixtures/test-config";
 
-const MAIN_APP_URL =
-  process.env.FEEDBACK_SHELL_FRONTEND_MAIN ?? "http://localhost:8002/";
+const MAIN_APP_URL = TestConfig.frontendMain;
 
 test.use({ serviceWorkers: "block" });
 
 const mockUser = {
   userId: "feedback-shell-user",
   fullName: "Feedback Shell User",
-  email: "feedback.shell@example.edu",
+  email: "feedback.shell@example.edu.sg",
   roles: ["SystemAdmin"],
   roleNames: ["System Administrator"],
   permissions: [
+    "screen.operations.view",
     "screen.reports.view",
     "api.report.read",
     "api.chat.use",
@@ -24,18 +24,17 @@ const mockUser = {
 };
 
 async function mockStaffShell(page: Page) {
+  const mainOrigin = new URL(MAIN_APP_URL).origin;
   await page.context().addCookies([
     {
-      name: CookieNames.session,
+      name: "Application-SessionToken",
       value: "feedback-shell-session",
-      domain: "localhost",
-      path: "/",
+      url: mainOrigin,
     },
     {
-      name: CookieNames.user,
+      name: "Application-User",
       value: JSON.stringify(mockUser),
-      domain: "localhost",
-      path: "/",
+      url: mainOrigin,
     },
   ]);
 
@@ -80,9 +79,21 @@ test.describe("staff shell feedback actions", () => {
     await expect(header.getByLabel("Share negative feedback")).toBeVisible();
     await expect(page.locator("#floating-feedback-root")).toHaveCount(0);
 
-    await header.getByLabel("Share positive feedback").click();
-    await expect(page.getByRole("dialog", { name: "Feedback" })).toBeVisible();
+    const opener = header.getByLabel("Share positive feedback");
+    await opener.click();
+    const dialog = page.getByRole("dialog", {
+      name: "Was Vendors useful?",
+    });
+    await expect(dialog).toBeVisible();
+    await expect(dialog.getByRole("button", { name: "Close dialog" })).toBeFocused();
     await expect(page.getByLabel("Thumbs up")).toHaveClass(/active/);
+    await page.keyboard.press("Shift+Tab");
+    expect(await dialog.evaluate((element) => element.contains(document.activeElement))).toBe(
+      true,
+    );
+    await page.keyboard.press("Escape");
+    await expect(dialog).toHaveCount(0);
+    await expect(opener).toBeFocused();
   });
 
   test("keeps the page title, feedback actions, and feedback popup usable on mobile", async ({
@@ -100,9 +111,22 @@ test.describe("staff shell feedback actions", () => {
     await expect(header.getByLabel("Share negative feedback")).toBeVisible();
 
     await header.getByLabel("Share negative feedback").click();
-    const dialog = page.getByRole("dialog", { name: "Feedback" });
+    const dialog = page.getByRole("dialog", {
+      name: "Was Vendors useful?",
+    });
     await expect(dialog).toBeVisible();
-    await expect(dialog).toHaveClass(/feedback-modal__sheet/);
+    await expect
+      .poll(async () => {
+        const geometry = await dialog.boundingBox();
+        return Math.abs((geometry?.y ?? 0) + (geometry?.height ?? 0) - 844);
+      })
+      .toBeLessThanOrEqual(1);
+    expect((await dialog.boundingBox())?.width).toBeLessThanOrEqual(390);
     await expect(page.getByLabel("Thumbs down")).toHaveClass(/active/);
+    await dialog.getByLabel("Additional feedback").fill("Mobile feedback");
+    await dialog.getByRole("button", { name: "Submit Feedback" }).click();
+    await expect(
+      page.getByRole("status").filter({ hasText: "Thank you!" }),
+    ).toBeVisible();
   });
 });

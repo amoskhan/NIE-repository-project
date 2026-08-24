@@ -1,2 +1,2 @@
-export { default as AppTable } from "./AppTable.vue";
-export type { Column } from "./AppTable.vue";
+export { default as NieTable } from "./NieTable.vue";
+export type { Column } from "./NieTable.vue";

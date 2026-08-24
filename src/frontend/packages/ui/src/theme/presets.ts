@@ -11,8 +11,8 @@ import type {
 
 const typography: ThemeTypographyTokens = {
   families: {
-    display: '"Lexend", "Inter", system-ui, sans-serif',
-    body: '"Lexend", "Inter", system-ui, sans-serif',
+    display: '"Plus Jakarta Sans", "Inter", system-ui, sans-serif',
+    body: '"Plus Jakarta Sans", "Inter", system-ui, sans-serif',
     mono: '"IBM Plex Mono", "SFMono-Regular", Consolas, monospace',
   },
   sizes: {
@@ -140,6 +140,34 @@ function hexToRgba(hex: string, alpha: number): string {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
+function relativeLuminance(hex: string): number {
+  const channels = [1, 3, 5].map((start) => {
+    const channel = parseInt(hex.slice(start, start + 2), 16) / 255;
+    return channel <= 0.04045
+      ? channel / 12.92
+      : ((channel + 0.055) / 1.055) ** 2.4;
+  });
+  return (
+    0.2126 * (channels[0] ?? 0) +
+    0.7152 * (channels[1] ?? 0) +
+    0.0722 * (channels[2] ?? 0)
+  );
+}
+
+function contrastRatio(first: string, second: string): number {
+  const lighter = Math.max(relativeLuminance(first), relativeLuminance(second));
+  const darker = Math.min(relativeLuminance(first), relativeLuminance(second));
+  return (lighter + 0.05) / (darker + 0.05);
+}
+
+function accessibleForeground(background: string): string {
+  const light = "#ffffff";
+  const dark = "#020617";
+  return contrastRatio(background, light) >= contrastRatio(background, dark)
+    ? light
+    : dark;
+}
+
 function makeBundle(
   brand: ThemeScale,
   neutral: ThemeScale,
@@ -150,6 +178,7 @@ function makeBundle(
   return {
     colors: {
       brand,
+      brandContrast: accessibleForeground(brand[600]),
       neutral,
       surface: dark
         ? {
@@ -179,8 +208,8 @@ function makeBundle(
           }
         : {
             strong: "#0f172a",
-            muted: "#64748b",
-            soft: "#475569",
+            muted: "#475569",
+            soft: "#334155",
             inverse: "#ffffff",
           },
       border: dark
@@ -197,22 +226,30 @@ function makeBundle(
       success: {
         scale: successScale,
         solid: dark ? successScale[400] : successScale[600],
-        contrast: dark ? "#052e1f" : "#ffffff",
+        contrast: accessibleForeground(
+          dark ? successScale[400] : successScale[600],
+        ),
       },
       warning: {
         scale: warningScale,
         solid: dark ? warningScale[400] : warningScale[600],
-        contrast: dark ? "#271200" : "#ffffff",
+        contrast: accessibleForeground(
+          dark ? warningScale[400] : warningScale[600],
+        ),
       },
       danger: {
         scale: dangerScale,
         solid: dark ? dangerScale[400] : dangerScale[600],
-        contrast: dark ? "#390610" : "#ffffff",
+        contrast: accessibleForeground(
+          dark ? dangerScale[400] : dangerScale[600],
+        ),
       },
       info: {
         scale: infoScale,
         solid: dark ? infoScale[400] : infoScale[600],
-        contrast: dark ? "#0f172a" : "#ffffff",
+        contrast: accessibleForeground(
+          dark ? infoScale[400] : infoScale[600],
+        ),
       },
     },
     typography,

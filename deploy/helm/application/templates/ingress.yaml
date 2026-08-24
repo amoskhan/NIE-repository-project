@@ -1,0 +1,34 @@
+{{- $basePath := include "application.basePath" . -}}
+{{- range $name, $workload := .Values.workloads }}
+{{- if $workload.ingressEnabled }}
+{{- $serviceName := include "application.serviceName" (list $ $name) }}
+{{- $targetService := and $.Values.rollouts.enabled (eq $workload.strategy "BlueGreen") | ternary (printf "%s-active" $serviceName) $serviceName }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ $serviceName }}
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: {{ $.Values.ingress.proxyBodySize | quote }}
+    nginx.ingress.kubernetes.io/proxy-read-timeout: {{ $.Values.ingress.proxyReadTimeout | quote }}
+    nginx.ingress.kubernetes.io/proxy-send-timeout: {{ $.Values.ingress.proxySendTimeout | quote }}
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: {{ $.Values.ingress.proxyConnectTimeout | quote }}
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+spec:
+  rules:
+    - {{- if ne $.Values.hostingMode "path" }}
+      host: {{ $.Values.hostName }}
+      {{- end }}
+      http:
+        paths:
+          - path: {{ printf "%s/%s(/|$)(.*)" $basePath $workload.pathSegment }}
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: {{ $targetService }}
+                port:
+                  number: {{ $workload.servicePort }}
+---
+{{- end }}
+{{- end }}

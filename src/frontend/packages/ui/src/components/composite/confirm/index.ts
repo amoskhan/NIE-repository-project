@@ -1,2 +1,2 @@
-export { default as AppConfirmDialog } from "./AppConfirmDialog.vue";
-export type { ConfirmOptions } from "./AppConfirmDialog.vue";
+export { default as NieConfirmDialog } from "./NieConfirmDialog.vue";
+export type { ConfirmOptions } from "./NieConfirmDialog.vue";

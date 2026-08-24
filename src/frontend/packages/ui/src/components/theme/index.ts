@@ -1,6 +1,6 @@
-export { default as AppThemeAuthPanel } from "./AppThemeAuthPanel.vue";
-export { default as AppThemeReportCard } from "./AppThemeReportCard.vue";
-export { default as AppThemeShell } from "./AppThemeShell.vue";
-export { default as AppThemeStatCard } from "./AppThemeStatCard.vue";
-export { default as AppThemeWizardStepper } from "./AppThemeWizardStepper.vue";
-export type { ThemeWizardStep } from "./AppThemeWizardStepper.vue";
+export { default as NieThemeAuthPanel } from "./NieThemeAuthPanel.vue";
+export { default as NieThemeReportCard } from "./NieThemeReportCard.vue";
+export { default as NieThemeShell } from "./NieThemeShell.vue";
+export { default as NieThemeStatCard } from "./NieThemeStatCard.vue";
+export { default as NieThemeWizardStepper } from "./NieThemeWizardStepper.vue";
+export type { ThemeWizardStep } from "./NieThemeWizardStepper.vue";

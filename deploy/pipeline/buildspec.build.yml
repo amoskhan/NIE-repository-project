@@ -1,0 +1,99 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      nodejs: 22
+      python: 3.12
+    commands:
+      - npm install -g pnpm@10.33.0
+      - aws --version
+  pre_build:
+    commands:
+      - export PRIMARY_ECR_REGISTRY="$(python -c "import json, os; repos=json.loads(os.environ['ECR_REPOSITORIES_JSON']); print(next(iter(repos.values())).split('/')[0] if repos else '')")"
+      - if [ -n "$PRIMARY_ECR_REGISTRY" ]; then aws ecr get-login-password --region "$AWS_REGION" | docker login --username AWS --password-stdin "$PRIMARY_ECR_REGISTRY"; fi
+      - |
+        eval "$(python - <<'PY'
+        import os, urllib.parse
+
+        def path_from_url(url, default="/"):
+            parsed = urllib.parse.urlparse(url or "")
+            path = parsed.path or default
+            if not path.startswith("/"):
+                path = "/" + path
+            if not path.endswith("/"):
+                path += "/"
+            return path
+
+        print(f"export VITE_APP_BASE_PATH='{path_from_url(os.environ.get('APP_BASE_URL'), '/')}'")
+        print(f"export VITE_LOGIN_BASE_PATH='{path_from_url(os.environ.get('LOGIN_BASE_URL'), '/login/')}'")
+        PY
+        )"
+      - export VITE_API_URL="${API_BASE_URL}"
+      - export VITE_AUTH_API_URL="${AUTH_API_URL%/}"
+      - export VITE_AUTH_SERVICE_URL="${LOGIN_BASE_URL}"
+      - export VITE_DASHBOARD_URL="${APP_BASE_URL}"
+      - export VITE_COOKIE_DOMAIN="${COOKIE_DOMAIN:-$HOST_NAME}"
+      - export VITE_COOKIE_SESSION_KEY="${COOKIE_SESSION_KEY:-Application-SessionToken}"
+      - export VITE_COOKIE_USER_KEY="${COOKIE_USER_KEY:-Application-User}"
+      - export VITE_SESSION_TIMEOUT_MINS="${SESSION_TIMEOUT_MINS:-10}"
+      - pnpm --dir src/frontend install --frozen-lockfile
+      - pnpm --dir src/frontend config set script-shell /bin/sh
+      - |
+        FRONTEND_BUILD_SCRIPT="$(node -e 'const s=require("./src/frontend/package.json").scripts||{}; console.log(s.build?"build":s["build:production"]?"build:production":s["build:all"]?"build:all":"")')"
+        test -n "$FRONTEND_BUILD_SCRIPT"
+        pnpm --dir src/frontend "$FRONTEND_BUILD_SCRIPT"
+  build:
+    commands:
+      - mkdir -p build-artifacts
+      - aws s3 sync "$MAIN_DIST_DIR/" "s3://$FRONTEND_BUCKET/$MAIN_UI_PREFIX" --delete
+      - aws s3 sync "$AUTH_DIST_DIR/" "s3://$FRONTEND_BUCKET/$AUTH_UI_PREFIX" --delete
+      - |
+        python - <<'PY'
+        import json, os, subprocess
+
+        services = json.loads(os.environ["SERVICES_JSON"])
+        repos = json.loads(os.environ["ECR_REPOSITORIES_JSON"])
+        image_map = {}
+        raw_commit = os.environ.get("CODEBUILD_RESOLVED_SOURCE_VERSION", "latest")
+        # Sanitize before truncating so a leading invalid char cannot erase the useful suffix.
+        commit = ''.join(c for c in raw_commit if c.isalnum() or c in '-_')[:12] or "latest"
+        for name, svc in services.items():
+            if svc["delivery_type"] != "container":
+                continue
+            repo = repos[name]
+            dockerfile = svc.get("dockerfile") or ""
+            context = svc.get("context") or "."
+            tags = [f"{repo}:{commit}", f"{repo}:latest"]
+            cmd = [
+                "docker", "build",
+                "-f", dockerfile,
+                context,
+            ]
+            for tag in tags:
+                cmd.extend(["-t", tag])
+            subprocess.check_call(cmd)
+            for tag in tags:
+                subprocess.check_call(["docker", "push", tag])
+            image_map[name] = {"repository": repo, "tag": commit, "platforms": ["linux/arm64"]}
+        with open("build-artifacts/image-map.json", "w", encoding="utf-8") as fh:
+            json.dump(image_map, fh)
+        PY
+  post_build:
+    commands:
+      - test -f build-artifacts/image-map.json
+      - |
+        if [ -n "${CLOUDFRONT_DISTRIBUTION_ID:-}" ]; then
+          if [ "${HOSTING_MODE}" = "path" ]; then
+            aws cloudfront create-invalidation \
+              --distribution-id "$CLOUDFRONT_DISTRIBUTION_ID" \
+              --paths "/${PATH_PREFIX}/*"
+          else
+            aws cloudfront create-invalidation \
+              --distribution-id "$CLOUDFRONT_DISTRIBUTION_ID" \
+              --paths "/" "/index.html" "/login" "/login/" "/login/*" "/assets/*"
+          fi
+        fi
+artifacts:
+  files:
+    - build-artifacts/image-map.json

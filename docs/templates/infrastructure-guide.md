@@ -20,7 +20,7 @@ Use **Mermaid.js** for deployment diagrams. Use Markdown tables for configuratio
 
 ## How to Create
 
-### Step 1: Document the App Template Deployment Baseline
+### Step 1: Document the NIE Template Deployment Baseline
 
 ```markdown
 # Infrastructure
@@ -29,7 +29,7 @@ Use **Mermaid.js** for deployment diagrams. Use Markdown tables for configuratio
 
 \`\`\`mermaid
 graph TB
-subgraph CI["CI/CD (GitHub Actions)"]
+subgraph CI["CI/CD (Jenkins)"]
 Build[Build Stage] --> Test[Test Stage]
 Test --> DockerBuild[Docker Build]
 DockerBuild --> Push[Push to Registry]
@@ -46,8 +46,8 @@ end
         end
     end
 
-    Deploy -->|docker compose up| Docker
-    User[Users] -->|HTTPS| Nginx
+    Deploy -->|docker-compose up| Docker
+    User[ðŸ‘¤ Users] -->|HTTPS| Nginx
     Nginx -->|/api/*| APIContainer
     Nginx -->|/auth/*| AuthContainer
     APIContainer --> PGContainer
@@ -67,11 +67,9 @@ end
 | UI         | nginx:alpine                         | 80              | 80/443          | build/Dockerfile.ui   |
 | Main API   | mcr.microsoft.com/dotnet/aspnet:10.0 | 5002            | -               | build/Dockerfile.api  |
 | Auth API   | mcr.microsoft.com/dotnet/aspnet:10.0 | 5001            | -               | build/Dockerfile.auth |
-| PostgreSQL | postgres:18-alpine                   | 5432            | 5432            | - (official image)    |
-| Valkey     | valkey/valkey:9-alpine               | 6379            | 6379            | - (official image)    |
+| PostgreSQL | postgres:16                          | 5432            | 5432            | - (official image)    |
+| Valkey     | valkey:9-alpine                      | 6379            | 6379            | - (official image)    |
 | [Custom]   | [Image]                              | [Port]          | [Port]          | [Dockerfile]          |
-
-All base images are public. Nothing here needs a private registry to build.
 
 ## Docker Compose Configuration
 
@@ -93,25 +91,21 @@ File: `build/docker-compose.yml`
 
 ### Main API (appsettings.json)
 
-| Variable                           | Description                   | Default (Dev)      | Production       |
-| ---------------------------------- | ----------------------------- | ------------------ | ---------------- |
-| ConnectionStrings:MainDbConnection | PostgreSQL connection         | Host=localhost;... | Via env / secret |
-| Valkey:ConnectionString            | Valkey connection             | localhost:6379     | valkey:6379      |
-| ValidSessionTimeInMins             | Session idle window           | 90                 | Project decision |
-| AuditLog:RetentionMonths           | How long audit rows are kept  | 6                  | Project decision |
-| Sentry:Dsn                         | Error reporting (blank = off) | (blank)            | Via secret       |
-| [Custom config]                    | [Description]                 | [Default]          | [Production]     |
+| Variable                            | Description            | Default (Dev)      | Production     |
+| ----------------------------------- | ---------------------- | ------------------ | -------------- |
+| ConnectionStrings:DefaultConnection | PostgreSQL connection  | Host=localhost;... | Via Docker env |
+| ConnectionStrings:Valkey            | Valkey connection      | localhost:6379     | valkey:6379    |
+| Jwt:Secret                          | JWT signing key        | [dev key]          | [secure key]   |
+| TickerQ:Enabled                    | Enable background jobs | true               | true           |
+| [Custom config]                     | [Description]          | [Default]          | [Production]   |
 
 ### Auth API (appsettings.json)
 
-| Variable                | Description                   | Default (Dev)  | Production       |
-| ----------------------- | ----------------------------- | -------------- | ---------------- |
-| Valkey:ConnectionString | Valkey connection             | localhost:6379 | valkey:6379      |
-| AllowedCORSOrigin       | Frontend origins allowed      | localhost SPAs | Your real hosts  |
-| ValidSessionTimeInMins  | Must match the Main API value | 90             | Same as Main API |
-| [Custom config]         | [Description]                 | [Default]      | [Production]     |
-
-`ValidSessionTimeInMins` has to be the same number in both services — the Auth API sets the session expiry from it and the Main API re-checks the idle window against it on every request.
+| Variable                 | Description       | Default (Dev)  | Production   |
+| ------------------------ | ----------------- | -------------- | ------------ |
+| ConnectionStrings:Valkey | Valkey connection | localhost:6379 | valkey:6379  |
+| Auth:SessionTimeout      | Session TTL       | 480 (minutes)  | 480          |
+| [Custom config]          | [Description]     | [Default]      | [Production] |
 
 ### Build Configuration
 
@@ -126,43 +120,37 @@ File: `build/docker-compose.yml`
 ### Step 4: Document CI/CD Pipeline
 
 ```markdown
-## Build Pipeline (GitHub Actions)
+## Build Pipeline (Jenkins)
 
-Files: `.github/workflows/`
+File: `build/Jenkinsfile`
 
 \`\`\`mermaid
 flowchart LR
-A[Push / PR] --> B[Workflow Trigger]
+A[Git Push] --> B[Jenkins Trigger]
 B --> C[Checkout Code]
 C --> D[Build Frontend]
 D --> E[Build Backend]
 E --> F[Run Tests]
 F --> G{Tests Pass?}
 G -->|Yes| H[Build Docker Images]
-G -->|No| I[Fail the check]
+G -->|No| I[Notify & Fail]
 H --> J[Push to Registry]
-J --> K[Deploy]
+J --> K[Deploy to Server]
 K --> L[Health Check]
 L --> M{Healthy?}
-M -->|Yes| N[Deployed]
+M -->|Yes| N[âœ… Deployed]
 M -->|No| O[Rollback]
 \`\`\`
 
 ### Build Commands
 
-| Stage          | Command                      | Notes                                      |
-| -------------- | ---------------------------- | ------------------------------------------ |
-| Frontend Build | `pnpm install && pnpm build` | Builds both main and auth apps             |
-| Backend Build  | `dotnet publish -c Release`  | Publishes API and Auth projects            |
-| Docker Build   | `docker compose build`       | Builds all containers                      |
-| Deploy         | `docker compose up -d`       | Or `helm upgrade --install` for Kubernetes |
-
-Store registry credentials, connection strings, and any DSN as **repository secrets**. Never commit them, and never echo a secret into a workflow log.
+| Stage          | Command                      | Notes                           |
+| -------------- | ---------------------------- | ------------------------------- |
+| Frontend Build | `pnpm install && pnpm build` | Builds both main and auth apps  |
+| Backend Build  | `dotnet publish -c Release`  | Publishes API and Auth projects |
+| Docker Build   | `docker-compose build`       | Builds all containers           |
+| Deploy         | `docker-compose up -d`       | Deploys with zero-downtime      |
 ```
-
-### Step 4b. Document the Kubernetes path (if you use one)
-
-The template ships a Helm chart at `deploy/helm/app-template/`. If your project deploys to Kubernetes rather than a single host, document the release name, namespace, ingress host, and which values you override per environment.
 
 ### Step 5: Document Database Operations
 
@@ -219,11 +207,11 @@ The template ships a Helm chart at `deploy/helm/app-template/`. If your project 
 
 ## Tips
 
-1. **Start with docker-compose.yml** — It's the source of truth for your deployment
-2. **Document ALL environment variables** — Missing config is the #1 deployment issue
-3. **Include rollback procedures** — Every deployment should have a rollback plan
-4. **Keep build/ configs version-controlled** — Never store production secrets in git
-5. **Health checks are mandatory** — Every service must have a health endpoint
+1. **Start with docker-compose.yml** â€” It's the source of truth for your deployment
+2. **Document ALL environment variables** â€” Missing config is the #1 deployment issue
+3. **Include rollback procedures** â€” Every deployment should have a rollback plan
+4. **Keep build/ configs version-controlled** â€” Never store production secrets in git
+5. **Health checks are mandatory** â€” Every service must have a health endpoint
 
 ## Review Checklist
 

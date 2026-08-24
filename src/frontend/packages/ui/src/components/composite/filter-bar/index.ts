@@ -1,2 +1,2 @@
-export { default as AppFilterBar } from "./AppFilterBar.vue";
-export type { FilterOption } from "./AppFilterBar.vue";
+export { default as NieFilterBar } from "./NieFilterBar.vue";
+export type { FilterOption } from "./NieFilterBar.vue";

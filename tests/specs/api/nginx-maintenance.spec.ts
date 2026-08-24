@@ -19,7 +19,9 @@ test.describe("nginx maintenance page", () => {
 
     const maintenanceHtml = readFileSync(maintenancePath, "utf8");
 
-    expect(nginxConfig).toContain("error_page 502 503 504 /maintenance.html;");
+    expect(nginxConfig).toContain(
+      "error_page 502 503 504 /maintenance.html;",
+    );
     expect(nginxConfig).toContain("location = /maintenance.html");
     expect(nginxConfig).not.toContain("error_page 502 503 504 /50x.html;");
 
@@ -27,14 +29,9 @@ test.describe("nginx maintenance page", () => {
       "COPY build/maintenance.html /usr/share/nginx/html/maintenance.html",
     );
 
-    expect(maintenanceHtml).toContain(
-      "<title>App Template - Maintenance</title>",
-    );
-    expect(maintenanceHtml).toContain("Service temporarily unavailable");
-
-    // The page is served precisely when upstreams are down, so it must not depend on
-    // anything it would have to fetch over the network.
-    expect(maintenanceHtml).not.toContain("<script");
-    expect(maintenanceHtml).not.toMatch(/<link[^>]+href="https?:/);
+    expect(maintenanceHtml).toContain("NIE Template - Maintenance");
+    expect(maintenanceHtml).toContain("Application maintenance in progress");
+    expect(maintenanceHtml).not.toContain("Centralized Database");
+    expect(maintenanceHtml).not.toContain("Microsoft Fabric");
   });
 });

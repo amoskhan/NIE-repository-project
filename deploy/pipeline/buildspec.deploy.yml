@@ -1,0 +1,64 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      python: 3.12
+    commands:
+      - curl -sSL https://get.helm.sh/helm-v3.17.3-linux-amd64.tar.gz | tar -xz
+      - install linux-amd64/helm /usr/local/bin/helm
+      - export KUBECTL_VERSION="$(aws eks describe-cluster --name "$CLUSTER_NAME" --region "$AWS_REGION" --query 'cluster.version' --output text)"
+      - curl -sSLo /usr/local/bin/kubectl "https://dl.k8s.io/release/v${KUBECTL_VERSION}.0/bin/linux/amd64/kubectl"
+      - chmod +x /usr/local/bin/kubectl
+      - aws eks update-kubeconfig --name "$CLUSTER_NAME" --region "$AWS_REGION"
+  build:
+    commands:
+      - |
+        python - <<'PY'
+        import json, os, subprocess
+
+        build_output_dir = os.environ.get("CODEBUILD_SRC_DIR_BuildOutput", os.getcwd())
+        candidates = [
+            os.path.join(build_output_dir, "build-artifacts", "image-map.json"),
+            os.path.join(build_output_dir, "image-map.json"),
+            os.path.join("build-artifacts", "image-map.json"),
+        ]
+        image_map_path = next((path for path in candidates if os.path.exists(path)), None)
+        if image_map_path is None:
+            raise FileNotFoundError(
+                f"image-map.json not found. Checked: {', '.join(candidates)}"
+            )
+
+        with open(image_map_path, "r", encoding="utf-8") as fh:
+            images = json.load(fh)
+        services = json.loads(os.environ["SERVICES_JSON"])
+        overrides = {"workloads": {}}
+        os.makedirs("build-artifacts", exist_ok=True)
+        for name, image in images.items():
+            overrides["workloads"][name] = {
+                "image": {
+                    "repository": image["repository"],
+                    "tag": image["tag"],
+                }
+            }
+            if name in services and services[name].get("node_pool"):
+                overrides["workloads"][name]["nodePool"] = services[name]["node_pool"]
+        with open("build-artifacts/image-overrides.json", "w", encoding="utf-8") as fh:
+            json.dump(overrides, fh)
+        cmd = [
+            "helm", "upgrade", "--install", os.environ["APP_KEY"],
+            os.environ["CHART_PATH"],
+            "--namespace", os.environ["NAMESPACE"],
+            "--create-namespace",
+            "--wait",
+            "--timeout", "15m",
+            "-f", os.environ["VALUES_FILE"],
+            "-f", "build-artifacts/image-overrides.json",
+            "--set-string", f"appKey={os.environ['APP_KEY']}",
+            "--set-string", f"environment={os.environ['DEPLOY_ENV']}",
+            "--set-string", f"hostingMode={os.environ['HOSTING_MODE']}",
+            "--set-string", f"hostName={os.environ['HOST_NAME']}",
+            "--set-string", f"pathPrefix={os.environ['PATH_PREFIX']}",
+        ]
+        subprocess.check_call(cmd)
+        PY

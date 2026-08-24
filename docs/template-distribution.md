@@ -1,169 +1,143 @@
-# App Template — Distribution Model
+# NIE Template distribution and AI-managed updates
 
-> **Audience:** template maintainers, and anyone maintaining a project that was scaffolded from this template.
-> **Status:** v2.0 — Copier flow + Python tools verified end-to-end.
+## Model
 
-This document describes how App Template gets from its GitHub repository into your project, and how your project stays aligned with the template over time. It complements [`.ai/common/09-template-versioning.md`](../.ai/common/09-template-versioning.md), which covers _authoring_ a release; this one covers _distributing_ it.
+The NIE Template separates three concerns:
 
-If you only want to start a project, you need [Lifecycle A](#a-creating-a-new-project) and nothing else.
+1. Copier creates a reproducible, complete reference tree, renders deployment identity, and records optional feature decisions.
+2. Markdown rules in `.ai` define the required architecture, behavior, libraries, menus, tests, and evidence.
+3. AI agents implement and verify application-specific changes. Standard toolchains provide evidence but do not decide the complete architectural verdict.
 
----
+There are no numbered migration tasks, task ledgers, custom Python alignment engines, or custom conformance verdicts.
 
-## The two planes
-
-```
-┌──────────────────────────────────────────────────────────────────┐
-│  AUTHORING  (this repo)                                          │
-│  • .ai/features/<feature>/   — per-feature dossiers              │
-│  • .ai/tasks/NNNN-<slug>/    — units of change                   │
-│  • docs/template-releases/   — release manifests                 │
-│  • tools/template-versioning/release.py  — release CLI (Python)  │
-└──────────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌──────────────────────────────────────────────────────────────────┐
-│  DISTRIBUTION  (Copier — external tool)                          │
-│  • copier.yml                          — questions + excludes    │
-│  • [[ _copier_conf.answers_file ]].jinja — answers persistence   │
-│  • tools/template-rename/rename.py    — namespace substitution   │
-│  • tools/template-align/align.py      — post-copy/update task    │
-│                                          scan + empty-dir prune  │
-└──────────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌──────────────────────────────────────────────────────────────────┐
-│  YOUR PROJECT                                                    │
-│  • .app-template-version.json    — which release is applied here │
-│  • .copier-answers.yml           — what was answered at scaffold │
-│  • .github/workflows/            — CI (GitHub Actions)           │
-└──────────────────────────────────────────────────────────────────┘
-```
-
-The split matters: you can change _how_ releases are authored without touching _how_ projects pull them, and vice versa.
-
----
-
-## Lifecycles
-
-### A. Creating a new project
+## Scaffolding with Copier
 
 ```bash
-# 1. Scaffold via Copier (three-way-merge aware; replaces a manual `git clone`)
-pip install --user copier          # one-off
-copier copy --trust gh:your-org/app-template ./my-app
-cd ./my-app
-# (Answers are stored in .copier-answers.yml; the namespace rename runs as a post-task.)
-
-# 2. Initial commit — required for `copier update` to work later
-git init && git add . && git commit -m "chore: scaffold from App Template"
-
-# 3. Self-check via .ai/ALIGN.md
-#    Paste the prompt into your AI agent and let it walk any baseline tasks
-#    that align.py flagged as unapplied.
+copier copy https://niegithub.nie.edu.sg/NIE/nie-template ./my-app
 ```
 
-Replace `your-org/app-template` with the GitHub org and repository you are pulling from. Copier accepts any Git URL, so a fork, a private repo (`gh:` uses your existing GitHub credentials), or a local path all work:
+Copier records the selected stack and optional feature decisions in `.copier-answers.yml`, copies the complete buildable reference, renders `project_name` and `project_title` into Helm, Compose, Nginx, runtime deployment configuration, maintenance, Jenkins, and AWS release artifacts, and executes no post-copy code. The canonical .NET and Vue source identities remain unchanged. The first AI agent then:
+
+1. reads `AGENTS.md` and `.ai/README.md`;
+2. keeps generic source folders, assemblies, namespaces, and `@nie/*` packages stable, and applies the approved identity only through configuration, branding, catalog metadata, observability, and deployment values;
+3. applies the recorded feature decisions without breaking shared dependencies and updates `.ai/APPLICATION.md` with explicit adopted/not-adopted reasons;
+4. verifies library floors and application rules;
+5. runs the standard gates and produces the evidence report.
+
+Copier updates are not treated as proof of source conformance and do not overwrite the AI rule contract in a derived application.
+
+### Deployment identity migration on update
+
+Applications created before deployment identity rendering was introduced can
+retain `deploy/helm/application`, `Start-ApplicationRelease.ps1`, and
+`Start-ApplicationRelease.sh` when a `copier update` also adds app-named
+replacements. Copier must not silently delete these files because they may
+contain application-owned customization.
+
+After every update:
+
+1. start from a clean Git worktree, run the reviewed Copier update, and inspect
+   all conflicts or rejection files;
+2. run `deploy/pipeline/Test-DeploymentIdentity.ps1` on Windows or
+   `bash deploy/pipeline/Test-DeploymentIdentity.sh` on Linux; do not deploy
+   while it reports legacy generic deployment artifacts;
+3. compare every legacy chart and release file with the previously pinned
+   canonical commit and classify it as identical, behind, customized, ahead,
+   conflict, or not applicable under `.ai/WORKFLOW.md`;
+4. merge intentional application-owned settings into
+   `deploy/helm/<project_name>`, `Start-<project_name>Release.ps1`, and
+   `Start-<project_name>Release.sh`, without replacing a customized folder
+   wholesale;
+5. update application-infrastructure `CHART_PATH`, release commands, Jenkins
+   job configuration, and operations documentation that still reference the
+   legacy paths;
+6. obtain the application owner's approval before removing customized legacy
+   files, then remove the reconciled generic chart/script and commit that
+   migration separately when practical;
+7. rerun the identity guard, Copier render smoke test, Helm lint/template,
+   container/Compose checks, and the application deployment smoke test.
+
+The checked-in migration regression test is:
+
+```powershell
+.\deploy\pipeline\Test-DeploymentIdentityMigration.ps1
+```
 
 ```bash
-copier copy --trust /path/to/app-template ./my-app        # local checkout
-copier copy --trust https://github.com/your-org/app-template.git ./my-app
+bash deploy/pipeline/Test-DeploymentIdentityMigration.sh
 ```
 
-**`--trust` is required** because Copier runs an opt-in post-scaffold task (`python tools/template-rename/rename.py --quiet`). Without `--trust`, Copier refuses to execute it and your project keeps the `AppTemplate` namespace.
+## Version pinning
 
-Copier asks for the project slug, human-readable title, .NET root namespace, and which optional feature packs to include. Answers land in `.copier-answers.yml` and are reused on every later update.
+`.nie-template-version.json` records:
 
-### B. Adopting a new template release
+- the last template and rules version assessed;
+- the exact canonical repository and commit;
+- the verification date and model;
+- whether the version includes a breaking change.
 
-```bash
-# In your project:
-copier update --trust        # pulls the latest template, three-way merge
-git diff                     # review the merge
-python /path/to/app-template/tools/template-audit/audit.py --repo .
-git add . && git commit -m "chore(template): adopt <release>"
-git push
-# CI runs the audit workflow; on green, merge.
-```
+The pin means “this application was assessed against this exact baseline,” not “all files are identical.” Advance it only after affected rules and source changes have evidence.
 
-**`copier update` does a real three-way merge:**
+## Refreshing AI instructions
 
-- File modified only in the template → applied cleanly.
-- File modified only in your project → preserved.
-- File modified in **both** on the same line → standard `<<<<<<<` / `>>>>>>>` conflict markers, `git status` shows `UU`. Resolve like any git merge, then commit.
+An AI agent performs a reviewed refresh:
 
-For an existing project that was never scaffolded through Copier, bootstrap the answers file once against its current state:
+1. clone or fetch `https://niegithub.nie.edu.sg/NIE/nie-template` into a temporary directory;
+2. resolve and record an exact canonical commit;
+3. compare canonical `.ai/*.md` with local `.ai/*.md`;
+4. preserve the application-owned `.ai/APPLICATION.md`;
+5. copy the reviewed canonical Markdown changes;
+6. diff rule and library changes and reassess every affected adopted feature;
+7. run tests and independent verification before advancing the pin.
 
-```bash
-copier copy --trust --vcs-ref=main gh:your-org/app-template . \
-  --data-file=existing-answers.yml --force
-```
+Matching instruction files alone never proves that application code complies.
 
-Or skip Copier entirely and use [`.ai/ALIGN.md`](../.ai/ALIGN.md) for AI-driven manual updates. Both paths are supported and neither is deprecated.
+## Source update triage
 
-### C. Applying a security task
+From the last pinned commit to the target commit, the AI reads the changelog and Git diff and classifies changes:
 
-When a task with `type: "security"` ships in the template:
+- security/correctness fixes affecting used code are prioritized;
+- library floors apply when the application is below them;
+- mandatory rules apply whenever their conditions exist;
+- default-on and conditional features apply only when adopted or triggered;
+- opt-in features require a product decision;
+- sample-only changes remain examples;
+- breaking migrations and changed business requirements require authorized approval.
 
-1. The maintainer authors the task under `.ai/tasks/NNNN-<slug>/` and cuts a release.
-2. Downstream projects learn about it either from `copier update` (which brings the task files in) or by running `python tools/template-align/align.py`, which lists tasks present in the template but not recorded in `.app-template-version.json`.
-3. Apply the task by following its `apply.md`, then run its `verify.sh`. On a zero exit, record the task id in `.app-template-version.json:appliedTasks`.
-4. CI re-runs the audit to confirm the change before review.
+The AI writes a direct implementation plan from affected rule IDs and code, implements it, and records evidence. No intermediate task dossier is necessary.
 
-There is no bot and no central registry pushing changes at you. Adoption is pull-based on purpose: your project decides when to take a change.
+## Dependency selection and vendor neutrality
 
----
+Derived applications follow the package order in `.ai/LIBRARIES.md` and the `NIE-DEPS-*` rules. For .NET platform capabilities, use the runtime/shared framework and official Microsoft packages first. For external technologies, use the official open-source project package where suitable, then a mature leading open-source alternative. Current popularity is supporting evidence only; security, maintenance, license, fit, interoperability, and replacement cost decide the outcome.
 
-## What each tool owns
+External providers remain replaceable. Vendor SDKs belong in infrastructure adapters selected by dependency injection, with domain/application contracts kept provider-neutral. New proprietary or provider-exclusive dependencies require explicit approval, commercial/data-egress analysis, a credible alternative, and a tested exit or migration plan.
 
-| Tool                                                                                            | Owns                                                                                                                | Does NOT own                      |
-| ----------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- | --------------------------------- |
-| **Copier (external)** + [`copier.yml`](../copier.yml)                                           | Distribution: scaffold, exclude per feature toggle, write answers, three-way-merge updates                          | Authoring or audit                |
-| [`tools/template-rename/rename.py`](../tools/template-rename/rename.py)                         | Namespace substitution (`AppTemplate` → your project name) across `src/`, `build/`, `.devcontainer/`, `.vscode/`    | Anything outside those four roots |
-| [`tools/template-align/align.py`](../tools/template-align/align.py)                             | Task discovery for derived projects, marker-file care, empty-directory pruning                                      | Auto-applying tasks               |
-| [`tools/template-audit/audit.py`](../tools/template-audit/audit.py) (+ optional `ast_check.py`) | Compliance check across five categories; AST checks for C# authorization and TypeScript quality when `--ast` is set | Auto-fixing findings              |
-| [`tools/template-versioning/release.py`](../tools/template-versioning/release.py)               | Cutting a release: manifest, notes, index, marker, and CHANGELOG written atomically; validating consistency         | Distribution to derived projects  |
-| [`tools/template-guardrails/`](../tools/template-guardrails/)                                   | Repository-level guardrail checks used in CI                                                                        | Application code                  |
-| [`.ai/ALIGN.md`](../.ai/ALIGN.md)                                                               | AI-driven interactive task application                                                                              | Automated syncing                 |
+## Common Vue and .NET code
 
-`tools/template-align/`, `tools/template-audit/`, and `tools/template-versioning/` are **maintainer** tools. They are excluded from scaffolded projects by `copier.yml` and are meant to be run from a checkout of the template itself.
+The AI compares each affected shared file against the pinned canonical commit and labels it identical, behind, customized, ahead, conflict, or not applicable.
 
----
+- Behind and uncustomized: adopt the compatible canonical change.
+- Customized: merge and preserve intentional domain behavior.
+- Ahead: retain the improvement if it still satisfies the rules and consider contributing it upstream.
+- Conflict: resolve explicitly with regression, domain, and security evidence.
+- Not applicable: record why.
 
-## Versioning and identity
+Never replace an entire customized source folder.
 
-Each derived project carries two identity files:
+Vue shared code remains domain-neutral and is extended with props, slots, events, composables, wrappers, plugins, theme tokens, provide/inject, and `app-config`. .NET shared code remains domain-neutral and is extended with interfaces, DI, options, policies, strategies, decorators, adapters, and events.
 
-| File                                         | Set when                                                  | Answers                                   |
-| -------------------------------------------- | --------------------------------------------------------- | ----------------------------------------- |
-| `.app-template-version.json:templateVersion` | At scaffold, and on each `copier update` or task adoption | "Which template release am I aligned to?" |
-| `.app-template-version.json:appliedTasks`    | When each task's `verify.sh` exits 0                      | "Which incremental tasks have I taken?"   |
-| `.copier-answers.yml`                        | At scaffold, retained on every update                     | "What feature toggles did I pick?"        |
+## Tool responsibilities
 
-`.app-template-version.json` is listed in `_skip_if_exists`, so `copier update` never clobbers your applied-task history.
+| Tool | Responsibility | Not sufficient for |
+| --- | --- | --- |
+| Copier | Initial file selection, answer recording, and deployment identity rendering | Source renaming, semantic merging, security, or conformance verdicts |
+| Roslyn analyzers and `dotnet format` | C# compiler, style, and analyzer findings | Domain correctness, authorization coverage, or UX |
+| ESLint and `vue-tsc` | Vue/TypeScript lint and type findings | Runtime workflows and visual/access behavior |
+| xUnit, Vitest, and Playwright | Executable behavior evidence | Uncovered requirements or architecture intent |
+| Dependency/secret scanners and CodeQL | Known dependency, secret, and static code risks | Complete threat modeling or business authorization |
+| Implementing AI | Rule assessment, implementation, tests, and evidence | Independent approval of its own material work |
+| Independent AI verifier | Adversarial review and risk-relevant reruns | Human approval for requirements, destructive changes, or exceptions |
 
----
+## Security and urgent fixes
 
-## CI
-
-Projects use **GitHub Actions**. Workflow files live under `.github/workflows/`; a scaffolded project receives the caller workflows, while template-maintenance workflows are excluded by `copier.yml`.
-
-A reasonable project pipeline builds the .NET solution, type-checks and builds the frontend workspace, runs the Playwright suites, and runs `tools/template-audit/audit.py` against the checkout. Add deployment jobs as your project needs them — the Helm chart under `deploy/helm/app-template/` and the Compose files under `build/` are both neutral and are meant to be edited.
-
----
-
-## FAQ
-
-**Q. Why both Copier and the task system?**
-Copier handles _file-level distribution_ — which bytes move from the template into your project. Tasks handle _semantic change_ — apply this migration, run this verification. They compose: Copier brings the files in, then `align.py` (run as a Copier post-task) reports which task dossiers still need to be applied semantically.
-
-**Q. Do I have to use Copier?**
-No. Clone the repo, delete `.git`, and run `python tools/template-rename/rename.py --to MyApp`. Keep `.app-template-version.json` so your project still records its starting release, and use `.ai/ALIGN.md` when you want to pull an update. Copier is recommended because it makes updates a merge instead of a manual diff.
-
-**Q. How do I stop my project from drifting away from the template?**
-Run the audit in CI. It acts on every push, and for a single project that is enough. The extra layers a large organisation would add on top — central drift dashboards, bots opening pull requests across many repositories — are deliberately not part of this template.
-
-**Q. Can I delete parts of the template I do not need?**
-Yes, and you should. The cleanest route is to turn the feature off at scaffold time, so `copier.yml` never copies it. For something already in your tree, use the matching dossier in `.ai/features/` — each one has a `files.md` listing everything the feature owns, and the procurement sample has a full [`remove.md`](../.ai/features/_samples/procurement/remove.md). Deleting by hand and missing one file (a controller that still references a deleted service, an access-function code that no longer exists) is the usual source of a broken build.
-
-**Q. Who decides when a template change lands in my project?**
-You do. Nothing is pushed automatically.
+Security releases and severe bug fixes are identified in the canonical changelog and commit diff. The AI must assess whether affected code or libraries are used, implement the fix promptly when applicable, run security-focused tests/scans, and obtain an independent security-oriented AI review. If the change is breaking or destructive, a human risk owner still approves the migration and rollback plan.

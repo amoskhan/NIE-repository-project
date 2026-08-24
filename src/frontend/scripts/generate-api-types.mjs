@@ -9,12 +9,13 @@
  */
 
 import { execSync } from "node:child_process";
-import { writeFileSync, mkdirSync, existsSync } from "node:fs";
+import { mkdirSync, existsSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const outputDir = resolve(__dirname, "packages/shared/src/api-types");
+const workspaceRoot = resolve(__dirname, "..");
+const outputDir = resolve(workspaceRoot, "packages/platform/src/api-types");
 
 if (!existsSync(outputDir)) {
   mkdirSync(outputDir, { recursive: true });
@@ -29,10 +30,10 @@ console.log(`Fetching OpenAPI spec from ${openApiSpecUrl} ...`);
 try {
   execSync(
     `npx openapi-typescript ${openApiSpecUrl} -o ${resolve(outputDir, "api.d.ts")}`,
-    { stdio: "inherit", cwd: resolve(__dirname) },
+    { stdio: "inherit", cwd: workspaceRoot },
   );
-  console.log(`\n✓ Types generated at packages/shared/src/api-types/api.d.ts`);
-} catch (error) {
+  console.log(`\n✓ Types generated at packages/platform/src/api-types/api.d.ts`);
+} catch {
   console.error(
     "\n✗ Failed to generate types. Is the API running on",
     apiUrl,

@@ -1,0 +1,9 @@
+[% set source %][% include "deploy/pipeline/README.md" %][% endset %]
+[[ source
+  | replace("NIE Template", project_title)
+  | replace("Start-ApplicationRelease.ps1", "Start-" ~ project_name ~ "Release.ps1")
+  | replace("Start-ApplicationRelease.sh", "Start-" ~ project_name ~ "Release.sh")
+  | replace("MYAPP", project_name)
+  | replace("application/<environment>", project_name ~ "/<environment>")
+  | replace("application-<environment>", project_name ~ "-<environment>")
+-]]

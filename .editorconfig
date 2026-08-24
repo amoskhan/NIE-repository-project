@@ -4,14 +4,12 @@
 root = true
 
 # All files
-#
-# LF everywhere: the backend, the frontend build and every deployment artefact
-# run in Linux containers, and `.gitattributes` checks the tree out with LF on
-# all platforms. Keeping the editor in step stops `dotnet format` and Prettier
-# from rewriting whole files on Windows.
 [*]
 indent_style = space
 indent_size = 2
+# LF, matching .gitattributes `* text=auto`, which normalises every text file to
+# LF in the repository and in Linux CI checkouts. Declaring crlf here contradicted
+# that and made `dotnet format --verify-no-changes` fail on every LF checkout.
 end_of_line = lf
 charset = utf-8
 trim_trailing_whitespace = true

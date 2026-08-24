@@ -1,13 +1,24 @@
 export type ThemeMode = "light" | "dark";
 export type ThemePreference = "system" | "light" | "dark";
 export type ThemePresetId =
-  "cobalt" | "ocean" | "emerald" | "rose" | "amber" | "violet";
+  | "cobalt"
+  | "ocean"
+  | "emerald"
+  | "rose"
+  | "amber"
+  | "violet";
 export type ThemeDensity = "comfortable" | "compact";
 export type ThemeRadius = "soft" | "rounded" | "sharp";
 export type ThemeMotion = "expressive" | "reduced";
 
 export type AppScenario =
-  "auth" | "admin" | "crud" | "wizard" | "reporting" | "applicant" | "public";
+  | "auth"
+  | "admin"
+  | "crud"
+  | "wizard"
+  | "reporting"
+  | "applicant"
+  | "public";
 
 export type LayoutVariant =
   | "split-auth"
@@ -63,6 +74,7 @@ export interface ThemeStatusTokens {
 
 export interface ThemeColorTokens {
   brand: ThemeScale;
+  brandContrast: string;
   neutral: ThemeScale;
   surface: ThemeSurfaceTokens;
   text: ThemeTextTokens;
@@ -83,7 +95,10 @@ export interface ThemeTypographyTokens {
     "xs" | "sm" | "md" | "lg" | "xl" | "2xl" | "3xl" | "4xl",
     string
   >;
-  weights: Record<"regular" | "medium" | "semibold" | "bold" | "black", string>;
+  weights: Record<
+    "regular" | "medium" | "semibold" | "bold" | "black",
+    string
+  >;
   tracking: Record<"tight" | "normal" | "wide", string>;
 }
 

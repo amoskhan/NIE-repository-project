@@ -1,1 +1,1 @@
-export { default as AppCard } from "./AppCard.vue";
+export { default as NieCard } from "./NieCard.vue";

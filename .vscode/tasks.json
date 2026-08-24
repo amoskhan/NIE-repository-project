@@ -2,13 +2,32 @@
   "version": "2.0.0",
   "tasks": [
     {
-      // Default build (Ctrl+Shift+B): compiles every project in the solution.
-      "label": "Build Solution",
+      "label": "Build Auth API",
       "type": "shell",
       "command": "dotnet",
       "args": [
         "build",
-        "${workspaceFolder}/src/backend/AppTemplate.sln",
+        "${workspaceFolder}/src/backend/Hosts/Auth/Auth.csproj",
+        "-c",
+        "Debug"
+      ],
+      "group": {
+        "kind": "build",
+        "isDefault": false
+      },
+      "problemMatcher": "$msCompile",
+      "presentation": {
+        "reveal": "silent",
+        "close": true
+      }
+    },
+    {
+      "label": "Build Main API",
+      "type": "shell",
+      "command": "dotnet",
+      "args": [
+        "build",
+        "${workspaceFolder}/src/backend/Hosts/Api/Api.csproj",
         "-c",
         "Debug"
       ],
@@ -23,50 +42,9 @@
       }
     },
     {
-      "label": "Build Auth API",
-      "type": "shell",
-      "command": "dotnet",
-      "args": [
-        "build",
-        "${workspaceFolder}/src/backend/Auth/Auth.csproj",
-        "-c",
-        "Debug"
-      ],
-      "group": "build",
-      "problemMatcher": "$msCompile",
-      "presentation": {
-        "reveal": "silent",
-        "close": true
-      }
-    },
-    {
-      "label": "Build Main API",
-      "type": "shell",
-      "command": "dotnet",
-      "args": [
-        "build",
-        "${workspaceFolder}/src/backend/API/API.csproj",
-        "-c",
-        "Debug"
-      ],
-      "group": "build",
-      "problemMatcher": "$msCompile",
-      "presentation": {
-        "reveal": "silent",
-        "close": true
-      }
-    },
-    {
       "label": "Build All Backend",
       "dependsOn": ["Build Auth API", "Build Main API"],
       "group": "build",
-      "problemMatcher": []
-    },
-    {
-      "label": "Format Backend",
-      "type": "shell",
-      "command": "dotnet",
-      "args": ["format", "${workspaceFolder}/src/backend/AppTemplate.sln"],
       "problemMatcher": []
     },
     {
@@ -92,21 +70,10 @@
       "problemMatcher": []
     },
     {
-      // @apptemplate/ui must be built before @apptemplate/shared and the apps.
       "label": "Build Frontend Packages",
       "dependsOn": ["Build UI Package", "Build Shared Package"],
       "dependsOrder": "sequence",
       "group": "build",
-      "problemMatcher": []
-    },
-    {
-      "label": "Type-check Frontend",
-      "type": "shell",
-      "command": "pnpm",
-      "args": ["run", "type-check"],
-      "options": {
-        "cwd": "${workspaceFolder}/src/frontend"
-      },
       "problemMatcher": []
     },
     {
@@ -121,3 +88,4 @@
     }
   ]
 }
+

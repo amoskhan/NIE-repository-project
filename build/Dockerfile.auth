@@ -1,32 +1,24 @@
-# Auth API image (ASP.NET Core, local identity provider + Valkey sessions).
-#
-# Build context is the REPOSITORY ROOT:
-#   docker build -f build/Dockerfile.auth -t apptemplate-auth-api .
-#
-# Alpine-based: this service has no native dependencies beyond ICU.
-
 # Build stage
-FROM mcr.microsoft.com/dotnet/sdk:10.0-alpine AS build
+FROM dhi.io/dotnet:10.0.103-sdk-alpine3.22 AS build
 WORKDIR /src
 
 # Copy project files and restore as distinct layers for better caching
 COPY ["src/backend/Directory.Build.props", "./"]
-COPY ["src/backend/global.json", "./"]
-COPY ["src/backend/Auth/Auth.csproj", "Auth/"]
-COPY ["src/backend/Libraries/Data/Data.csproj", "Libraries/Data/"]
-COPY ["src/backend/Libraries/Domain/Domain.csproj", "Libraries/Domain/"]
-COPY ["src/backend/Libraries/Services/Services.csproj", "Libraries/Services/"]
-COPY ["src/backend/Libraries/Shared/Shared.csproj", "Libraries/Shared/"]
+COPY ["src/backend/Directory.Packages.props", "./"]
+COPY ["global.json", "./"]
+COPY ["src/backend/BuildingBlocks/BuildingBlocks/BuildingBlocks.csproj", "BuildingBlocks/BuildingBlocks/"]
+COPY ["src/backend/BuildingBlocks/Validation/Validation.csproj", "BuildingBlocks/Validation/"]
+COPY ["src/backend/Hosts/Auth/Auth.csproj", "Hosts/Auth/"]
 
 # Restore dependencies
-RUN dotnet restore "Auth/Auth.csproj" --use-current-runtime
+RUN dotnet restore "Hosts/Auth/Auth.csproj" --use-current-runtime
 
 # Copy source code
-COPY ["src/backend/Auth/", "Auth/"]
-COPY ["src/backend/Libraries/", "Libraries/"]
+COPY ["src/backend/BuildingBlocks/", "BuildingBlocks/"]
+COPY ["src/backend/Hosts/Auth/", "Hosts/Auth/"]
 
 # Publish with optimizations
-RUN dotnet publish "Auth/Auth.csproj" \
+RUN dotnet publish "Hosts/Auth/Auth.csproj" \
     -c Release \
     -o /app/publish \
     --use-current-runtime \
@@ -41,7 +33,7 @@ RUN rm -f /app/publish/appsettings.json \
     && find /app/publish -name "*.xml" -delete
 
 # Runtime stage
-FROM mcr.microsoft.com/dotnet/aspnet:10.0-alpine AS runtime
+FROM dhi.io/aspnetcore:10.0.3-alpine3.22
 WORKDIR /app
 
 # Install runtime dependencies and keep the runtime container non-root.
@@ -62,8 +54,4 @@ ENV ASPNETCORE_URLS=http://+:8080 \
 USER 65532:65532
 
 EXPOSE 8080
-
-HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
-    CMD wget -q -O - http://localhost:8080/health/live || exit 1
-
 ENTRYPOINT ["dotnet", "Auth.dll"]

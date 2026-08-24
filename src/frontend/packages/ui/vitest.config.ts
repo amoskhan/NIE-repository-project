@@ -1,19 +1,40 @@
-import { fileURLToPath, URL } from "node:url";
 import vue from "@vitejs/plugin-vue";
+import { resolve } from "node:path";
 import { defineConfig } from "vitest/config";
 
-// Unit tests for @apptemplate/ui components. The Vue plugin is what lets Vitest import
-// a .vue single-file component; without it the test would fail at the import line.
 export default defineConfig({
   plugins: [vue()],
   resolve: {
     alias: {
-      "@": fileURLToPath(new URL("./src", import.meta.url)),
+      "@": resolve(import.meta.dirname, "src"),
     },
   },
   test: {
-    name: "ui",
     environment: "jsdom",
-    include: ["src/**/*.{test,spec}.ts"],
+    globals: true,
+    restoreMocks: true,
+    coverage: {
+      provider: "v8",
+      reporter: ["text", "html", "lcov", "cobertura"],
+      reportsDirectory: "coverage",
+      // Without an explicit include, only files that a test happens to import
+      // are instrumented, so the percentages describe a subset instead of the
+      // package. Keep this aligned with the sources shipped by the library.
+      include: ["src/**/*.{ts,vue}"],
+      exclude: [
+        "coverage/**",
+        "dist/**",
+        "**/*.d.ts",
+        "**/*.config.*",
+        "**/types.ts",
+        "**/__tests__/**",
+      ],
+      thresholds: {
+        statements: 94,
+        branches: 89,
+        functions: 96,
+        lines: 95,
+      },
+    },
   },
 });

@@ -1,0 +1,14 @@
+appKey: application
+environment: dev
+hostingMode: path
+hostName: apps.dev.nie.edu.sg
+pathPrefix: MYAPP
+runtimeSecretName: runtime-config
+ingress:
+  proxyBodySize: 100m
+  proxyReadTimeout: "180"
+  proxySendTimeout: "180"
+  proxyConnectTimeout: "60"
+rollouts:
+  enabled: false
+workloads: {}

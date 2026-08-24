@@ -18,7 +18,7 @@ The data model document defines all database entities, their relationships, and 
 
 - Entity Relationship diagrams in **Mermaid.js erDiagram** syntax
 - Field specifications in Markdown tables
-- All entities must follow App Template conventions
+- All entities must follow NIE Template conventions
 
 ## How to Create
 
@@ -28,7 +28,7 @@ Start by listing all entities your project needs. Every entity extends `Timestam
 
 ```csharp
 // All entities inherit from TimestampedEntity which provides:
-// - Id (int)
+// - Id (Guid, initialized with the canonical UUIDv7 factory)
 // - CreatedAt (DateTime)
 // - CreatedBy (string)
 // - UpdatedAt (DateTime?)
@@ -45,9 +45,9 @@ Start by listing all entities your project needs. Every entity extends `Timestam
 
 \`\`\`mermaid
 erDiagram
-%% App Template base entities (always present)
+%% NIE Template base entities (always present)
 AppUser {
-int Id PK
+uuid Id PK
 string UserName
 string FirstName
 string LastName
@@ -57,7 +57,7 @@ bool IsActive
 }
 
     Code {
-        int Id PK
+        uuid Id PK
         int CodeType "ECodeType enum"
         int CodeName "ECodeName enum"
         string Value
@@ -68,10 +68,10 @@ bool IsActive
 
     %% Add your project entities below:
     YourEntity {
-        int Id PK
+        uuid Id PK
         string Name
         string Description
-        int CategoryId FK
+        uuid CategoryId FK
         datetime CreatedAt
         string CreatedBy
         bool IsActive
@@ -93,12 +93,12 @@ For each entity, create a field table:
 
 | Field        | Type      | Required | Max Length | Default         | Notes                     |
 | ------------ | --------- | -------- | ---------- | --------------- | ------------------------- |
-| Id           | int       | Yes      | -          | Auto-increment  | PK from TimestampedEntity |
+| Id           | Guid      | Yes      | -          | UUIDv7 factory  | PK from TimestampedEntity |
 | Name         | string    | Yes      | 200        | -               | Display name              |
 | Description  | string    | No       | 2000       | null            | Rich text                 |
 | Status       | ECodeType | Yes      | -          | Active          | Code table reference      |
-| CategoryId   | int       | Yes      | -          | -               | FK to Code table          |
-| AssignedToId | int       | No       | -          | null            | FK to AppUser             |
+| CategoryId   | Guid      | Yes      | -          | -               | FK to Code table          |
+| AssignedToId | Guid?     | No       | -          | null            | FK to AppUser             |
 | StartDate    | DateTime  | No       | -          | null            |                           |
 | EndDate      | DateTime  | No       | -          | null            | Must be > StartDate       |
 | IsActive     | bool      | Yes      | -          | true            | Soft delete flag          |
@@ -150,15 +150,17 @@ This project uses the following code types (add to `ECodeType` and `ECodeName` e
 - Deleting a Code entry used by YourEntity is prevented (no cascade)
 ```
 
-## App Template Entity Conventions
+## NIE Template Entity Conventions
 
 1. **Always** extend `TimestampedEntity`
-2. **Always** include `IsActive` for soft deletes
-3. **Use Code tables** for dropdowns/lookups — never hardcode enum values in entities
-4. **Navigation properties** use virtual keyword
-5. **FK properties** named `{RelatedEntity}Id`
-6. **DbContext** registers entities in `MainDbContext`
-7. **Migrations** created via `dotnet ef migrations add {Name}`
+2. **Always** use non-empty UUIDv7 application primary keys (`Guid` in .NET, `uuid` in PostgreSQL, canonical strings in Vue); integer/identity/serial keys and UUIDv4 are not allowed
+3. **Always** carry foreign keys as `Guid`/`Guid?` and never coerce frontend ID strings to numbers
+4. **Always** include `IsActive` for soft deletes
+5. **Use Code tables** for dropdowns/lookups — never hardcode enum values in entities
+6. **Navigation properties** use virtual keyword
+7. **FK properties** named `{RelatedEntity}Id`
+8. **DbContext** registers entities in `MainDbContext`
+9. **Migrations** created via `dotnet ef migrations add {Name}` and reviewed to ensure every identifier column is PostgreSQL `uuid`
 
 ## Tips
 
@@ -170,6 +172,7 @@ This project uses the following code types (add to `ECodeType` and `ECodeName` e
 ## Review Checklist
 
 - [ ] All entities extend TimestampedEntity
+- [ ] Every primary/foreign key is Guid/UUIDv7 and generated migration identifier column is PostgreSQL uuid
 - [ ] ER diagram in Mermaid.js shows all entities and relationships
 - [ ] Field specifications include type, required, max length, default
 - [ ] Code table usage documented with ECodeType/ECodeName values

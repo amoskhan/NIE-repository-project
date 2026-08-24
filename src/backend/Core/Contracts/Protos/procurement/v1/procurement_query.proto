@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package nie.integration.procurement.v1;
+option csharp_namespace = "Contracts.Grpc.Procurement.V1";
+
+service ProcurementQuery {
+  rpc GetPurchaseOrderSummary (GetPurchaseOrderSummaryRequest) returns (PurchaseOrderSummaryReply);
+}
+
+message GetPurchaseOrderSummaryRequest {
+  string purchase_order_id = 1;
+}
+
+message PurchaseOrderSummaryReply {
+  string purchase_order_id = 1;
+  string purchase_order_number = 2;
+  string status = 3;
+  string vendor_id = 4;
+  string vendor_name = 5;
+  string total_amount = 6;
+  string currency = 7;
+}

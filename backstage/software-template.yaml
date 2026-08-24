@@ -1,0 +1,193 @@
+# Backstage Software Template — "Create new project from NIE template".
+#
+# Register this in your Backstage instance via the Software Catalog. After
+# registration, users see a "Create" → "NIE Application Template" tile,
+# answer the same questions Copier asks, and Backstage scaffolds + commits
+# the new repo + registers it back in the catalog.
+#
+# Implementation note
+# -------------------
+# Backstage's `fetch:template` action speaks Cookiecutter natively. For
+# Copier templates, we use `fetch:plain` to clone the template, then run
+# Copier as a `cli` step. This requires that the Backstage backend image
+# has Python + Copier installed (see backstage-backend.Dockerfile snippet
+# at the bottom of this file).
+#
+# Until your Backstage instance has Copier installed, this template will
+# not work — keep this file as documentation + ready-to-deploy when the
+# instance is provisioned.
+
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: nie-application
+  title: NIE Application
+  description: >-
+    Scaffold a new .NET 10 + Vue 3 application from the NIE Template, with
+    feature toggles for chat / workflow / PDF / file storage / MyInfo.
+  tags:
+    - recommended
+    - nie
+    - dotnet
+    - vue
+
+spec:
+  owner: group:nie-platform
+  type: service
+
+  # Questions the user answers in the Backstage Software Templates UI.
+  # These match copier.yml so the template's own scaffolding stays the source
+  # of truth; Backstage just proxies the answers.
+  parameters:
+    - title: Project identity
+      required:
+        - project_name
+        - project_title
+        - dotnet_root_namespace
+      properties:
+        project_name:
+          title: Project slug
+          type: string
+          description: Lowercase kebab-case (e.g. ems-portal)
+          pattern: "^[a-z][a-z0-9-]{2,40}$"
+        project_title:
+          title: Project title
+          type: string
+          description: Human-readable name (e.g. "EMS Portal")
+        organization:
+          title: Organisation
+          type: string
+          enum: [Nie, Moe, Other]
+          default: Nie
+        dotnet_root_namespace:
+          title: .NET root namespace
+          type: string
+          description: PascalCase (e.g. EmsPortal)
+          pattern: "^[A-Z][A-Za-z0-9]{2,40}$"
+
+    - title: Stack + features
+      properties:
+        stack:
+          title: Stack
+          type: string
+          enum: [full, backend]
+          enumNames:
+            - "Full-stack (.NET 10 API + Vue 3 SPA)"
+            - "Backend-only (.NET 10 API)"
+          default: full
+        include_chat:
+          title: AI Chatbot
+          type: boolean
+          default: false
+        include_workflow:
+          title: Workflow Engine
+          type: boolean
+          default: true
+        include_pdf:
+          title: PDF Generation
+          type: boolean
+          default: false
+        include_storage:
+          title: File Storage (Local + S3)
+          type: boolean
+          default: true
+        include_myinfo:
+          title: Singpass MyInfo
+          type: boolean
+          default: false
+        include_service_integration:
+          title: RabbitMQ + gRPC service integration
+          type: boolean
+          default: false
+
+    - title: Repository
+      required:
+        - repoUrl
+      properties:
+        repoUrl:
+          title: Repository location
+          type: string
+          ui:field: RepoUrlPicker
+          ui:options:
+            allowedHosts:
+              - github.com
+
+  # Steps run by Backstage's scaffolder backend.
+  steps:
+    - id: clone-template
+      name: Clone NIE Template (Copier source)
+      action: fetch:plain
+      input:
+        url: "https://github.com/NIE/nie-template/archive/refs/heads/main.tar.gz"
+        targetPath: ./.copier-source
+
+    - id: run-copier
+      name: Render with Copier
+      action: scaffolder:run-shell
+      input:
+        # Backstage backend image must have python3 + copier installed.
+        # See the Dockerfile snippet in the comments at the bottom.
+        command:
+          - bash
+          - -lc
+          - >-
+            copier copy --defaults --vcs-ref=HEAD
+            --data project_name=${{ parameters.project_name }}
+            --data project_title='${{ parameters.project_title }}'
+            --data organization=${{ parameters.organization }}
+            --data stack=${{ parameters.stack }}
+            --data dotnet_root_namespace=${{ parameters.dotnet_root_namespace }}
+            --data include_chat=${{ parameters.include_chat }}
+            --data include_workflow=${{ parameters.include_workflow }}
+            --data include_pdf=${{ parameters.include_pdf }}
+            --data include_storage=${{ parameters.include_storage }}
+            --data include_myinfo=${{ parameters.include_myinfo }}
+            --data include_service_integration=${{ parameters.include_service_integration }}
+            ./.copier-source ./out
+
+    - id: publish
+      name: Publish to GitHub
+      action: publish:github
+      input:
+        repoUrl: ${{ parameters.repoUrl }}
+        defaultBranch: main
+        sourcePath: ./out
+        description: ${{ parameters.project_title }}
+        repoVisibility: private
+
+    - id: register
+      name: Register in catalog
+      action: catalog:register
+      input:
+        repoContentsUrl: ${{ steps.publish.output.repoContentsUrl }}
+        catalogInfoPath: /catalog-info.yaml
+
+  output:
+    links:
+      - title: Open in GitHub
+        url: ${{ steps.publish.output.remoteUrl }}
+      - title: Open in catalog
+        icon: catalog
+        entityRef: ${{ steps.register.output.entityRef }}
+
+# ---------------------------------------------------------------------------
+# Backstage backend image — Dockerfile snippet
+# ---------------------------------------------------------------------------
+# Append to your backstage-backend Dockerfile so the `scaffolder:run-shell`
+# step has Copier available. (Snippet, not active YAML.)
+#
+#   FROM node:22-bookworm-slim AS backstage-backend
+#   RUN apt-get update && apt-get install -y --no-install-recommends \
+#         python3 python3-pip python3-venv git \
+#       && rm -rf /var/lib/apt/lists/*
+#   RUN python3 -m venv /opt/copier-venv && \
+#       /opt/copier-venv/bin/pip install --no-cache-dir copier && \
+#       ln -sf /opt/copier-venv/bin/copier /usr/local/bin/copier
+#
+# ---------------------------------------------------------------------------
+# When to deploy
+# ---------------------------------------------------------------------------
+# Don't run Backstage just for this template. It's worthwhile when:
+#   - You operate ~50+ services and need a portal + ownership graph + tech radar.
+#   - You want one onboarding surface for many templates (this is one of them).
+# Until then, the Copier CLI flow described in README.md is enough.

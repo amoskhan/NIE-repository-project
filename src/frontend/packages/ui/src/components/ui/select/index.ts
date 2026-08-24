@@ -1,1 +1,1 @@
-export { default as AppSelect } from "./AppSelect.vue";
+export { default as NieSelect } from "./NieSelect.vue";

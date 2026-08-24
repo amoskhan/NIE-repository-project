@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package nie.integration.vendor.v1;
+option csharp_namespace = "Contracts.Grpc.Vendor.V1";
+
+service VendorDirectory {
+  rpc GetVendorSnapshot (GetVendorSnapshotRequest) returns (VendorSnapshotReply);
+}
+
+message GetVendorSnapshotRequest {
+  string vendor_code = 1;
+}
+
+message VendorSnapshotReply {
+  string vendor_id = 1;
+  string vendor_code = 2;
+  string name = 3;
+  bool is_active = 4;
+}

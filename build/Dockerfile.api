@@ -1,10 +1,3 @@
-# Main API image (ASP.NET Core + Playwright for PDF/report rendering).
-#
-# Build context is the REPOSITORY ROOT:
-#   docker build -f build/Dockerfile.api -t apptemplate-main-api .
-#
-# Debian-based (not Alpine) because Playwright's Chromium needs glibc.
-
 # Build stage
 FROM mcr.microsoft.com/dotnet/sdk:10.0.102 AS build
 WORKDIR /src
@@ -13,27 +6,33 @@ ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
 
 # Copy project files and restore as distinct layers for better caching
 COPY ["src/backend/Directory.Build.props", "./"]
-COPY ["src/backend/global.json", "./"]
-COPY ["src/backend/API/API.csproj", "API/"]
-COPY ["src/backend/Libraries/AI/AI.csproj", "Libraries/AI/"]
-COPY ["src/backend/Libraries/Data/Data.csproj", "Libraries/Data/"]
-COPY ["src/backend/Libraries/Domain/Domain.csproj", "Libraries/Domain/"]
-COPY ["src/backend/Libraries/Services/Services.csproj", "Libraries/Services/"]
-COPY ["src/backend/Libraries/Shared/Shared.csproj", "Libraries/Shared/"]
+COPY ["src/backend/Directory.Packages.props", "./"]
+COPY ["global.json", "./"]
+COPY ["src/backend/BuildingBlocks/BuildingBlocks/BuildingBlocks.csproj", "BuildingBlocks/BuildingBlocks/"]
+COPY ["src/backend/BuildingBlocks/Validation/Validation.csproj", "BuildingBlocks/Validation/"]
+COPY ["src/backend/Core/Contracts/Contracts.csproj", "Core/Contracts/"]
+COPY ["src/backend/Core/Domain/Domain.csproj", "Core/Domain/"]
+COPY ["src/backend/Core/Application/Application.csproj", "Core/Application/"]
+COPY ["src/backend/Infrastructure/AI/AI.csproj", "Infrastructure/AI/"]
+COPY ["src/backend/Infrastructure/Integration/Integration.csproj", "Infrastructure/Integration/"]
+COPY ["src/backend/Infrastructure/Persistence/Persistence.csproj", "Infrastructure/Persistence/"]
+COPY ["src/backend/Hosts/Api/Api.csproj", "Hosts/Api/"]
 
 # Restore dependencies
-RUN dotnet restore "API/API.csproj" --use-current-runtime
+RUN dotnet restore "Hosts/Api/Api.csproj" --use-current-runtime
 
 # Copy source code
-COPY ["src/backend/API/", "API/"]
-COPY ["src/backend/Libraries/", "Libraries/"]
-# NOTE: the PDF report logo is backend-owned
-# (Libraries/Services/Services/PdfGeneration/Assets/report-logo.svg) and is copied by the
-# line above. No frontend asset needs staging here — this image builds from src/backend
-# alone, which is also what makes a `stack: backend` scaffold buildable.
+COPY ["src/backend/BuildingBlocks/", "BuildingBlocks/"]
+COPY ["src/backend/Core/", "Core/"]
+COPY ["src/backend/Infrastructure/", "Infrastructure/"]
+COPY ["src/backend/Hosts/Api/", "Hosts/Api/"]
+# Persistence.csproj embeds this logo through a path relative to Infrastructure/Persistence.
+COPY ["src/frontend/apps/main/src/assets/nie-logo.svg", "/frontend/apps/main/src/assets/nie-logo.svg"]
+# Api.csproj publishes this non-secret, local-development profile catalog as a linked resource.
+COPY ["src/frontend/apps/main/public/test-profiles.json", "/frontend/apps/main/public/test-profiles.json"]
 
 # Publish with optimizations
-RUN dotnet publish "API/API.csproj" \
+RUN dotnet publish "Hosts/Api/Api.csproj" \
     -c Release \
     -o /app/publish \
     --use-current-runtime \
@@ -56,7 +55,6 @@ WORKDIR /app
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         ca-certificates \
-        curl \
         fontconfig \
         fonts-liberation \
         fonts-noto-cjk \
@@ -93,7 +91,10 @@ RUN apt-get update \
 COPY --from=build --chown=appuser:appgroup /app/publish .
 COPY --from=build --chown=appuser:appgroup /ms-playwright /ms-playwright
 
-ENV ASPNETCORE_URLS=http://+:8080 \
+ENV Kestrel__Endpoints__Http__Url=http://+:8080 \
+    Kestrel__Endpoints__Http__Protocols=Http1 \
+    Kestrel__Endpoints__Grpc__Url=http://+:8081 \
+    Kestrel__Endpoints__Grpc__Protocols=Http2 \
     DOTNET_RUNNING_IN_CONTAINER=true \
     DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=false \
     PLAYWRIGHT_BROWSERS_PATH=/ms-playwright \
@@ -103,9 +104,5 @@ ENV ASPNETCORE_URLS=http://+:8080 \
 
 USER appuser
 
-EXPOSE 8080
-
-HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
-    CMD curl -fsS http://localhost:8080/health/live || exit 1
-
-ENTRYPOINT ["dotnet", "API.dll"]
+EXPOSE 8080 8081
+ENTRYPOINT ["dotnet", "Api.dll"]

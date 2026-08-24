@@ -6,7 +6,7 @@
 
 ## Purpose
 
-The data flow document traces how data moves through the system — from user input, through API layers, services, database, and back. AI agents use this to understand the full request lifecycle and generate correct service/controller code.
+The data flow document traces how data moves through the system â€” from user input, through API layers, services, database, and back. AI agents use this to understand the full request lifecycle and generate correct service/controller code.
 
 ## When to Create
 
@@ -20,7 +20,7 @@ Use **Mermaid.js** for all diagrams. Prefer `flowchart` for data flows and `sequ
 
 ## How to Create
 
-### Step 1: Document the Standard App Template Data Flow
+### Step 1: Document the Standard NIE Template Data Flow
 
 Every project shares this baseline. Include it in your `docs/data-flow.md`:
 
@@ -31,7 +31,7 @@ Every project shares this baseline. Include it in your `docs/data-flow.md`:
 
 \`\`\`mermaid
 flowchart TD
-User[User Browser] -->|HTTP Request| Nginx[nginx Reverse Proxy]
+User[ðŸ‘¤ User Browser] -->|HTTP Request| Nginx[nginx Reverse Proxy]
 Nginx -->|/api/_| API[Main API :5002]
 Nginx -->|/auth/_| Auth[Auth API :5001]
 
@@ -183,8 +183,8 @@ B -->|Timeout| E
 flowchart TD
 subgraph Triggers["Job Triggers"]
 CRON[â° Scheduled CRON]
-EVENT[Event-triggered]
-MANUAL[Manual trigger]
+EVENT[ðŸ“¢ Event-triggered]
+MANUAL[ðŸ‘¤ Manual trigger]
 end
 
     subgraph TickerQ["TickerQ Pipeline"]
@@ -213,11 +213,11 @@ end
 
 ## Tips
 
-1. **Start with the happy path** — Document the normal flow first, then add error branches
-2. **One diagram per feature** — Don't cram everything into one massive diagram
-3. **Show data transformations** — Where does a DTO become an Entity? Where does raw data become a response?
-4. **Include caching** — If Valkey is used, show cache check/store steps
-5. **Document async flows** — Background jobs, webhooks, and event-driven patterns need separate diagrams
+1. **Start with the happy path** â€” Document the normal flow first, then add error branches
+2. **One diagram per feature** â€” Don't cram everything into one massive diagram
+3. **Show data transformations** â€” Where does a DTO become an Entity? Where does raw data become a response?
+4. **Include caching** â€” If Valkey is used, show cache check/store steps
+5. **Document async flows** â€” Background jobs, webhooks, and event-driven patterns need separate diagrams
 
 ## Review Checklist
 

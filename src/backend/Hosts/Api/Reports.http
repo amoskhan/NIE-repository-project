@@ -1,0 +1,42 @@
+@baseUrl = https://localhost:5000
+@sessionId = replace-with-session-id
+
+### Report types
+GET {{baseUrl}}/api/Report/types
+X-Session-Id: {{sessionId}}
+
+### HTML preview
+POST {{baseUrl}}/api/Report/preview
+Content-Type: application/json
+X-Session-Id: {{sessionId}}
+
+{
+  "reportType": "po-summary",
+  "status": "All",
+  "dateFrom": "2026-05-01",
+  "dateTo": "2026-05-23"
+}
+
+### PDF preview
+POST {{baseUrl}}/api/Report/pdf
+Content-Type: application/json
+X-Session-Id: {{sessionId}}
+
+{
+  "reportType": "po-summary",
+  "status": "All",
+  "dateFrom": "2026-05-01",
+  "dateTo": "2026-05-23"
+}
+
+### PDF download
+POST {{baseUrl}}/api/Report/download
+Content-Type: application/json
+X-Session-Id: {{sessionId}}
+
+{
+  "reportType": "audit-trail",
+  "category": "All",
+  "dateFrom": "2026-05-01",
+  "dateTo": "2026-05-23"
+}

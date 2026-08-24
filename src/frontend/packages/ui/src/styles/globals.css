@@ -1,5 +1,11 @@
 :root {
-  font-family: var(--theme-font-body, "Lexend", "Inter", system-ui, sans-serif);
+  font-family: var(
+    --theme-font-body,
+    "Plus Jakarta Sans",
+    "Inter",
+    system-ui,
+    sans-serif
+  );
   color: var(--theme-color-text-strong, #0f172a);
   background-color: var(--theme-color-surface-canvas, #f6f5f8);
   color-scheme: light;
@@ -37,17 +43,87 @@
   --theme-color-surface-overlay: rgba(15, 23, 42, 0.52);
 
   --theme-color-text-strong: #0f172a;
-  --theme-color-text-muted: #64748b;
-  --theme-color-text-soft: #475569;
+  --theme-color-text-muted: #475569;
+  --theme-color-text-soft: #334155;
   --theme-color-text-inverse: #ffffff;
+  --theme-color-static-white: #ffffff;
+  --theme-color-static-black: #000000;
+  --theme-color-on-brand: var(--theme-color-static-white);
 
   --theme-color-border-subtle: rgba(148, 163, 184, 0.2);
   --theme-color-border-default: #e2e8f0;
   --theme-color-border-strong: #cbd5e1;
 
-  --theme-font-display: "Lexend", "Inter", system-ui, sans-serif;
-  --theme-font-body: "Lexend", "Inter", system-ui, sans-serif;
+  --theme-color-success-50: #ecfdf5;
+  --theme-color-success-100: #d1fae5;
+  --theme-color-success-200: #a7f3d0;
+  --theme-color-success-300: #6ee7b7;
+  --theme-color-success-400: #34d399;
+  --theme-color-success-500: #10b981;
+  --theme-color-success-600: #059669;
+  --theme-color-success-700: #047857;
+  --theme-color-success-800: #065f46;
+  --theme-color-success-900: #064e3b;
+  --theme-color-success-950: #022c22;
+  --theme-color-success-solid: var(--theme-color-success-600);
+  --theme-color-warning-50: #fffbeb;
+  --theme-color-warning-100: #fef3c7;
+  --theme-color-warning-200: #fde68a;
+  --theme-color-warning-300: #fcd34d;
+  --theme-color-warning-400: #fbbf24;
+  --theme-color-warning-500: #f59e0b;
+  --theme-color-warning-600: #d97706;
+  --theme-color-warning-700: #b45309;
+  --theme-color-warning-800: #92400e;
+  --theme-color-warning-900: #78350f;
+  --theme-color-warning-950: #451a03;
+  --theme-color-warning-solid: var(--theme-color-warning-500);
+  --theme-color-danger-50: #fff1f2;
+  --theme-color-danger-100: #ffe4e6;
+  --theme-color-danger-200: #fecdd3;
+  --theme-color-danger-300: #fda4af;
+  --theme-color-danger-400: #fb7185;
+  --theme-color-danger-500: #f43f5e;
+  --theme-color-danger-600: #e11d48;
+  --theme-color-danger-700: #be123c;
+  --theme-color-danger-800: #9f1239;
+  --theme-color-danger-900: #881337;
+  --theme-color-danger-950: #4c0519;
+  --theme-color-danger-solid: var(--theme-color-danger-600);
+  --theme-color-info-50: #eff6ff;
+  --theme-color-info-100: #dbeafe;
+  --theme-color-info-200: #bfdbfe;
+  --theme-color-info-300: #93c5fd;
+  --theme-color-info-400: #60a5fa;
+  --theme-color-info-500: #3b82f6;
+  --theme-color-info-600: #2563eb;
+  --theme-color-info-700: #1d4ed8;
+  --theme-color-info-800: #1e40af;
+  --theme-color-info-900: #1e3a8a;
+  --theme-color-info-950: #172554;
+  --theme-color-info-solid: var(--theme-color-info-600);
+  --theme-color-success-contrast: var(--theme-color-neutral-950);
+  --theme-color-warning-contrast: var(--theme-color-neutral-950);
+  --theme-color-danger-contrast: var(--theme-color-static-white);
+  --theme-color-info-contrast: var(--theme-color-static-white);
+
+  --theme-font-display: "Plus Jakarta Sans", "Inter", system-ui, sans-serif;
+  --theme-font-body: "Plus Jakarta Sans", "Inter", system-ui, sans-serif;
   --theme-font-mono: "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
+  --theme-font-size-navigation: 0.6875rem;
+  --theme-font-size-caption: 0.75rem;
+  --theme-font-size-label: 0.8125rem;
+  --theme-font-size-body: 0.875rem;
+  --theme-font-size-body-lg: 1rem;
+  --theme-font-size-card-title: 1.125rem;
+  --theme-font-size-section-title: 1.25rem;
+  --theme-font-size-page-title: 1.5rem;
+  --theme-font-size-hero: clamp(1.75rem, 2.4vw, 2.25rem);
+  --theme-font-size-display: clamp(3.75rem, 8vw, 4.5rem);
+  --theme-font-weight-regular: 400;
+  --theme-font-weight-medium: 500;
+  --theme-font-weight-semibold: 600;
+  --theme-font-weight-bold: 700;
   --theme-letter-spacing-tight: -0.03em;
   --theme-letter-spacing-wide: 0.22em;
 
@@ -56,6 +132,7 @@
     0 4px 6px -4px rgba(15, 23, 42, 0.04);
   --theme-shadow-card: 0 20px 50px -24px rgba(21, 0, 248, 0.16);
   --theme-shadow-float: 0 24px 80px -30px rgba(15, 23, 42, 0.24);
+  --theme-shadow-inset: inset 0 1px 0 rgba(255, 255, 255, 0.8);
 
   --theme-shell-sidebar-width: 18.5rem;
   --theme-shell-sidebar-collapsed-width: 5.5rem;
@@ -63,10 +140,60 @@
   --theme-shell-page-gutter: 1.5rem;
   --theme-shell-panel-gap: 1.5rem;
 
+  --theme-space-0: 0;
+  --theme-space-0-5: 0.125rem;
+  --theme-space-1: 0.25rem;
+  --theme-space-1-5: 0.375rem;
+  --theme-space-2: 0.5rem;
+  --theme-space-2-5: 0.625rem;
+  --theme-space-3: 0.75rem;
+  --theme-space-4: 1rem;
+  --theme-space-4-5: 1.125rem;
+  --theme-space-5: 1.25rem;
+  --theme-space-6: 1.5rem;
+  --theme-space-8: 2rem;
+  --theme-space-10: 2.5rem;
+  --theme-space-12: 3rem;
+  --theme-space-16: 4rem;
+
   --theme-radius-sm: 0.75rem;
   --theme-radius-md: 1rem;
   --theme-radius-lg: 1.5rem;
   --theme-radius-xl: 2rem;
+  --theme-radius-control: var(--theme-radius-sm);
+  --theme-radius-panel: var(--theme-radius-md);
+  --theme-radius-dialog: var(--theme-radius-lg);
+  --theme-radius-pill: 9999px;
+  --theme-radius-circle: 50%;
+
+  --theme-control-height-sm: 2.5rem;
+  --theme-control-height-md: 2.75rem;
+  --theme-control-height-lg: 3rem;
+
+  --theme-color-success-surface: color-mix(
+    in srgb,
+    var(--theme-color-success-solid) 14%,
+    var(--theme-color-surface-panel)
+  );
+  --theme-color-success-text: var(--theme-color-success-700);
+  --theme-color-warning-surface: color-mix(
+    in srgb,
+    var(--theme-color-warning-solid) 16%,
+    var(--theme-color-surface-panel)
+  );
+  --theme-color-warning-text: var(--theme-color-warning-800);
+  --theme-color-danger-surface: color-mix(
+    in srgb,
+    var(--theme-color-danger-solid) 14%,
+    var(--theme-color-surface-panel)
+  );
+  --theme-color-danger-text: var(--theme-color-danger-700);
+  --theme-color-info-surface: color-mix(
+    in srgb,
+    var(--theme-color-info-solid) 14%,
+    var(--theme-color-surface-panel)
+  );
+  --theme-color-info-text: var(--theme-color-info-700);
 
   --color-primary: var(--theme-color-brand-600);
   --color-primary-dark: var(--theme-color-brand-700);
@@ -115,6 +242,10 @@ html {
 
 html.dark {
   color-scheme: dark;
+  --theme-color-success-text: var(--theme-color-success-300);
+  --theme-color-warning-text: var(--theme-color-warning-300);
+  --theme-color-danger-text: var(--theme-color-danger-300);
+  --theme-color-info-text: var(--theme-color-info-300);
 }
 
 [data-theme-density="compact"] {
@@ -147,6 +278,28 @@ html.dark {
   animation-iteration-count: 1 !important;
   transition-duration: 0.01ms !important;
   scroll-behavior: auto !important;
+}
+
+/*
+ * Secondary-400/500 are useful for borders and icons, but they do not meet
+ * WCAG AA for body-sized text on the light canvas. Keep their visual scale
+ * while enforcing the readable text token whenever those legacy utilities
+ * are used for foreground copy. Dark mode retains the brighter 400/500 hues.
+ */
+html:not(.dark) .text-secondary-400,
+html:not(.dark) .text-secondary-500 {
+  color: var(--theme-color-neutral-600);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 *,
@@ -208,12 +361,36 @@ button {
   cursor: pointer;
 }
 
+.text-on-brand {
+  color: var(--theme-color-on-brand) !important;
+}
+
+.text-on-success {
+  color: var(--theme-color-success-contrast) !important;
+}
+
+.text-on-danger {
+  color: var(--theme-color-danger-contrast) !important;
+}
+
+.text-on-warning {
+  color: var(--theme-color-warning-contrast) !important;
+}
+
+.bg-status-danger {
+  background-color: var(--theme-color-danger-solid);
+}
+
+.bg-status-danger:hover {
+  filter: brightness(0.9);
+}
+
 .material-symbols-outlined {
   display: inline-block;
   font-family: "Material Symbols Outlined";
   font-style: normal;
   font-weight: normal;
-  font-size: 24px;
+  font-size: var(--theme-font-size-page-title);
   line-height: 1;
   white-space: nowrap;
   direction: ltr;
@@ -245,14 +422,14 @@ button {
 
 .portal-title {
   color: var(--color-text);
-  font-size: clamp(2rem, 4vw, 2.5rem);
-  font-weight: 800;
+  font-size: var(--theme-font-size-page-title);
+  font-weight: var(--theme-font-weight-bold);
   letter-spacing: var(--theme-letter-spacing-tight);
 }
 
 .portal-subtitle {
   color: var(--color-text-muted);
-  font-size: 0.95rem;
+  font-size: var(--theme-font-size-body);
   line-height: 1.7;
 }
 
@@ -266,15 +443,15 @@ button {
 .portal-primary-btn {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  height: 2.75rem;
-  padding: 0 1.25rem;
+  gap: var(--theme-space-2);
+  height: var(--theme-control-height-md);
+  padding: 0 var(--theme-space-5);
   border: 0;
-  border-radius: var(--theme-radius-lg);
+  border-radius: var(--theme-radius-control);
   background-color: var(--color-accent);
-  color: #fff;
-  font-size: 0.875rem;
-  font-weight: 700;
+  color: var(--theme-color-on-brand);
+  font-size: var(--theme-font-size-body);
+  font-weight: var(--theme-font-weight-semibold);
   box-shadow: var(--theme-shadow-soft);
   transition:
     filter 180ms ease,
@@ -289,15 +466,15 @@ button {
 .portal-secondary-btn {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  height: 2.75rem;
-  padding: 0 1rem;
+  gap: var(--theme-space-2);
+  height: var(--theme-control-height-md);
+  padding: 0 var(--theme-space-4);
   border: 1px solid var(--color-border);
-  border-radius: var(--theme-radius-md);
+  border-radius: var(--theme-radius-control);
   background-color: var(--color-surface);
   color: var(--color-text-muted);
-  font-size: 0.875rem;
-  font-weight: 600;
+  font-size: var(--theme-font-size-body);
+  font-weight: var(--theme-font-weight-medium);
   transition:
     border-color 180ms ease,
     color 180ms ease;
@@ -312,10 +489,11 @@ button {
 .portal-select {
   width: 100%;
   border: 1px solid var(--color-border);
-  border-radius: var(--theme-radius-md);
+  min-height: var(--theme-control-height-md);
+  border-radius: var(--theme-radius-control);
   background-color: color-mix(in srgb, var(--color-surface-alt) 88%, white 12%);
   color: var(--color-text);
-  padding: 0.7rem 1rem;
+  padding: var(--theme-space-2) var(--theme-space-3);
   transition:
     border-color 180ms ease,
     background-color 180ms ease,
@@ -332,10 +510,10 @@ button {
 
 .portal-label {
   display: block;
-  margin-bottom: 0.35rem;
+  margin-bottom: var(--theme-space-1);
   color: var(--color-text-soft);
-  font-size: 0.875rem;
-  font-weight: 600;
+  font-size: var(--theme-font-size-body);
+  font-weight: var(--theme-font-weight-semibold);
 }
 
 .theme-shell__sidebar {
@@ -408,7 +586,7 @@ button {
 
 ::-webkit-scrollbar-thumb {
   background: color-mix(in srgb, var(--color-text-muted) 45%, transparent);
-  border-radius: 9999px;
+  border-radius: var(--theme-radius-pill);
 }
 
 ::-webkit-scrollbar-thumb:hover {
@@ -452,6 +630,113 @@ html.dark .text-slate-400 {
     in srgb,
     var(--color-text-muted) 80%,
     transparent
+  ) !important;
+}
+
+/*
+ * Semantic utility compatibility for feature screens. Base utilities remain
+ * adaptive when a component does not need a bespoke dark-mode exception.
+ */
+html.dark .bg-secondary-50 {
+  background-color: var(--color-surface-alt) !important;
+}
+
+html.dark .bg-secondary-100,
+html.dark .bg-secondary-200 {
+  background-color: var(--theme-color-surface-elevated) !important;
+}
+
+html.dark .border-secondary-50,
+html.dark .border-secondary-100,
+html.dark .border-secondary-200,
+html.dark .border-secondary-300 {
+  border-color: var(--color-border) !important;
+}
+
+html.dark .text-secondary-950,
+html.dark .text-secondary-900,
+html.dark .text-secondary-800 {
+  color: var(--color-text) !important;
+}
+
+html.dark .text-secondary-700,
+html.dark .text-secondary-600,
+html.dark .text-secondary-500 {
+  color: var(--theme-color-text-soft) !important;
+}
+
+html.dark .text-secondary-400 {
+  color: var(--color-text-muted) !important;
+}
+
+html.dark .bg-primary-50,
+html.dark .bg-primary-100 {
+  background-color: color-mix(
+    in srgb,
+    var(--color-primary) 16%,
+    var(--color-surface)
+  ) !important;
+}
+
+html.dark .text-primary-700,
+html.dark .text-primary-800 {
+  color: var(--theme-color-brand-300) !important;
+}
+
+html.dark .bg-success-50,
+html.dark .bg-success-100 {
+  background-color: var(--theme-color-success-surface) !important;
+}
+
+html.dark .text-success-600,
+html.dark .text-success-700,
+html.dark .text-success-800 {
+  color: var(--theme-color-success-text) !important;
+}
+
+html.dark .bg-warning-50,
+html.dark .bg-warning-100 {
+  background-color: var(--theme-color-warning-surface) !important;
+}
+
+html.dark .text-warning-600,
+html.dark .text-warning-700,
+html.dark .text-warning-800 {
+  color: var(--theme-color-warning-text) !important;
+}
+
+html.dark .bg-danger-50,
+html.dark .bg-danger-100 {
+  background-color: var(--theme-color-danger-surface) !important;
+}
+
+html.dark .text-danger-600,
+html.dark .text-danger-700,
+html.dark .text-danger-800 {
+  color: var(--theme-color-danger-text) !important;
+}
+
+html.dark .bg-info-50,
+html.dark .bg-info-100 {
+  background-color: var(--theme-color-info-surface) !important;
+}
+
+html.dark .text-info-600,
+html.dark .text-info-700,
+html.dark .text-info-800 {
+  color: var(--theme-color-info-text) !important;
+}
+
+html.dark .hover\:bg-secondary-50:hover,
+html.dark .hover\:bg-secondary-100:hover {
+  background-color: var(--theme-color-surface-elevated) !important;
+}
+
+html.dark .hover\:bg-primary-50:hover {
+  background-color: color-mix(
+    in srgb,
+    var(--color-primary) 20%,
+    var(--color-surface)
   ) !important;
 }
 

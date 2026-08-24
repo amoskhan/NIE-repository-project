@@ -16,7 +16,7 @@ The test strategy document defines what to test, how to test it, and what covera
 
 ## Format
 
-Use Markdown tables for test matrices. Reference Playwright patterns from the App Template test suite.
+Use Markdown tables for test matrices. Reference Playwright patterns from the NIE Template test suite.
 
 ## How to Create
 
@@ -84,7 +84,7 @@ For each entity/controller, define the API tests needed:
 
 | Username   | Role     | Purpose                  | Defined In                   |
 | ---------- | -------- | ------------------------ | ---------------------------- |
-| alice      | Admin    | Admin operations testing | tests/fixtures/test-users.ts |
+| devia      | Admin    | Admin operations testing | tests/fixtures/test-users.ts |
 | [testuser] | User     | Standard user testing    | tests/fixtures/test-users.ts |
 | [reviewer] | Reviewer | Approval flow testing    | tests/fixtures/test-users.ts |
 
@@ -150,7 +150,7 @@ const response = await apiClient.post('/api/Entity', {
 data: {
 name: 'Test Entity',
 description: 'Created by automated test',
-categoryId: 1,
+categoryId: '019fc37a-71b9-7858-86f2-9fea26d10e34',
 },
 });
 expect(response.ok()).toBeTruthy();
@@ -224,7 +224,7 @@ await authenticatedPage.click('button:has-text("Save")');
 
 1. **API tests first** — They're fast, reliable, and catch most bugs
 2. **E2E tests for critical paths** — Login, CRUD, main workflows
-3. **Use fixtures** — App Template provides authenticated API clients via fixtures
+3. **Use fixtures** — NIE Template provides authenticated API clients via fixtures
 4. **Test MCP integration** — Use Playwright MCP for interactive test debugging
 5. **Test negative cases** — 401s, 403s, 404s, 400s are as important as 200s
 6. **Keep tests independent** — Each test should create its own data if needed

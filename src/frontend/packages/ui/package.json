@@ -1,5 +1,5 @@
 {
-  "name": "@apptemplate/ui",
+  "name": "@nie/ui",
   "version": "1.0.0",
   "type": "module",
   "private": true,
@@ -21,10 +21,10 @@
   ],
   "scripts": {
     "dev": "vite build --watch",
-    "//build": "This package is consumed FROM SOURCE: main/module/types and every exports entry point at ./src, so the SPAs compile these files with their own Vite build and nothing ever reads dist/. There is therefore nothing to bundle here — `build` exists only so the workspace-level build can type-check the package, and it is deliberately identical to `type-check`.",
-    "build": "vue-tsc --noEmit",
+    "build": "vite build && vue-tsc --project tsconfig.build.json --declaration --emitDeclarationOnly",
     "type-check": "vue-tsc --noEmit",
-    "test:unit": "vitest run",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "clean": "rm -rf dist node_modules"
   },
   "dependencies": {
@@ -39,16 +39,17 @@
     "@tailwindcss/postcss": "^4.2.2",
     "@types/node": "^25.5.0",
     "@vitejs/plugin-vue": "^6.0.5",
-    "@vue/test-utils": "^2.4.11",
+    "@vitest/coverage-v8": "4.1.10",
+    "@vue/test-utils": "2.4.11",
     "@vue/tsconfig": "^0.9.1",
     "autoprefixer": "^10.4.27",
-    "jsdom": "^30.0.1",
-    "postcss": "^8.5.8",
+    "postcss": "^8.5.25",
+    "jsdom": "30.0.1",
     "tailwindcss": "^4.2.2",
     "typescript": "^6.0.2",
-    "vite": "^8.0.2",
+    "vite": "^8.2.0",
     "vite-plugin-dts": "^4.5.4",
-    "vitest": "^4.1.10",
+    "vitest": "4.1.10",
     "vue-tsc": "^3.2.6"
   },
   "peerDependencies": {

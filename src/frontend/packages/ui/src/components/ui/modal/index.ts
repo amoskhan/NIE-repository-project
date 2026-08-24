@@ -1,1 +1,1 @@
-export { default as AppModal } from "./AppModal.vue";
+export { default as NieModal } from "./NieModal.vue";

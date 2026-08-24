@@ -1,1 +1,1 @@
-export { default as AppPagination } from "./AppPagination.vue";
+export { default as NiePagination } from "./NiePagination.vue";

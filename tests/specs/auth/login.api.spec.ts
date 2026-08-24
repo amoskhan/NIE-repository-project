@@ -4,11 +4,7 @@
  */
 
 import { test, expect } from "@playwright/test";
-import {
-  createApiClient,
-  createAuthApiClient,
-  ApiClient,
-} from "../fixtures/api-client";
+import { createApiClient, createAuthApiClient, ApiClient } from "../fixtures/api-client";
 import { TestConfig, ApiEndpoints } from "../fixtures/test-config";
 import { getTestUser, hasTestUsers } from "../fixtures/test-users";
 

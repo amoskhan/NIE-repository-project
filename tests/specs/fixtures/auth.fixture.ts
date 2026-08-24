@@ -4,10 +4,9 @@
  */
 
 import { Page, BrowserContext } from "@playwright/test";
-import { createAuthApiClient, LoginResponse } from "./api-client";
-import { CookieNames } from "./cookie-names";
-import { ApiEndpoints } from "./test-config";
-import { getTestUser } from "./test-users";
+import { ApiClient, createAuthApiClient, LoginResponse } from "./api-client";
+import { TestConfig, ApiEndpoints } from "./test-config";
+import { getTestUser, TestUser } from "./test-users";
 
 export interface AuthSession {
   sessionToken: string;
@@ -15,16 +14,14 @@ export interface AuthSession {
   userName: string;
   email: string;
   roles?: string[];
-  permissions?: string[];
 }
 
 /**
- * Request body for POST /api/Auth/Login.
- * These field names are the wire contract — do not rename them.
+ * Request body for login
  */
 export interface LoginRequest {
-  userid: string;
-  pd: string;
+  username: string;
+  password: string;
 }
 
 /**
@@ -50,28 +47,24 @@ export async function login(
   await client.init();
 
   try {
-    // The Auth API's login contract uses `userid` / `pd`, not `username` / `password`.
     const response = await client.post<LoginResponse>(ApiEndpoints.auth.login, {
-      userid: username,
-      pd: password,
+      username,
+      password,
     });
 
     if (response.status === 200 && response.data.isAuthenticated) {
       return {
         sessionToken: response.data.sessionToken,
         userId: response.data.userId,
-        userName: response.data.fullName || response.data.userName,
+        userName: response.data.userName,
         email: response.data.email,
         roles: response.data.roles,
-        permissions: response.data.permissions,
       };
     }
 
     console.error(
       "Login failed:",
-      response.data.errorMessage ||
-        response.data.message ||
-        `Status: ${response.status}`,
+      response.data.errorMessage || `Status: ${response.status}`,
     );
     return null;
   } catch (error) {
@@ -91,9 +84,9 @@ export async function loginWithTestUser(): Promise<AuthSession | null> {
 }
 
 /**
- * Create a test session via API (bypasses normal login).
- * Useful when a spec needs an authenticated browser without exercising the login form.
- * Note: the Auth API only exposes CreateTestSession in the Development environment.
+ * Create a test session via API (bypasses normal login)
+ * This is used for automated testing when 2FA or SSO is in place
+ * Note: Requires a CreateTestSession endpoint in the Auth API
  */
 export async function createTestSession(
   userId?: string,
@@ -152,40 +145,29 @@ export async function createDefaultTestSession(): Promise<AuthSession | null> {
 }
 
 /**
- * Set authentication cookies in the browser context.
- *
- * Uses the CANONICAL cookie names from
- * src/frontend/packages/shared/src/config/constants.ts. The main app's router reads
- * `AppTemplate-SessionToken` to decide whether a visitor is signed in, and parses
- * `AppTemplate-User` (JSON) for roles and permissions — so the shape below has to match
- * what the auth app writes on a real login, not just the names.
+ * Set authentication cookies in the browser context
  */
 export async function setAuthCookies(
   context: BrowserContext,
   session: AuthSession,
-  domain = "localhost",
 ): Promise<void> {
-  const roles = session.roles ?? [];
-
   await context.addCookies([
     {
-      name: CookieNames.session,
+      name: "SessionToken",
       value: session.sessionToken,
-      domain,
+      domain: "localhost",
       path: "/",
     },
     {
-      name: CookieNames.user,
-      value: JSON.stringify({
-        userId: session.userId,
-        fullName: session.userName,
-        email: session.email,
-        department: "",
-        roles,
-        roleNames: roles,
-        permissions: session.permissions ?? [],
-      }),
-      domain,
+      name: "UserId",
+      value: session.userId,
+      domain: "localhost",
+      path: "/",
+    },
+    {
+      name: "UserName",
+      value: session.userName,
+      domain: "localhost",
       path: "/",
     },
   ]);

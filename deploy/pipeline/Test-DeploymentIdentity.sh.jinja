@@ -1,0 +1,7 @@
+[% set source %][% include "deploy/pipeline/Test-DeploymentIdentity.sh" %][% endset %]
+[[ source
+  | replace(
+      "expected_app_name='application'",
+      "expected_app_name='" ~ project_name ~ "'"
+    )
+-]]

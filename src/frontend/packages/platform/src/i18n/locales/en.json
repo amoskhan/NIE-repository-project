@@ -1,0 +1,45 @@
+{
+  "app": {
+    "title": "NIE Template",
+    "loading": "Loading…",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "search": "Search",
+    "noResults": "No results found",
+    "confirm": "Confirm",
+    "back": "Back",
+    "next": "Next",
+    "yes": "Yes",
+    "no": "No"
+  },
+  "auth": {
+    "login": "Login",
+    "logout": "Logout",
+    "username": "Username",
+    "password": "Password",
+    "loginButton": "Sign In",
+    "loginFailed": "Invalid username or password",
+    "sessionExpired": "Your session has expired. Please log in again."
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "settings": "Settings",
+    "profile": "Profile"
+  },
+  "validation": {
+    "required": "This field is required",
+    "minLength": "Must be at least {min} characters",
+    "maxLength": "Must be at most {max} characters",
+    "email": "Please enter a valid email address",
+    "numeric": "Must be a number"
+  },
+  "error": {
+    "generic": "Something went wrong. Please try again.",
+    "notFound": "Page not found",
+    "forbidden": "You don't have permission to access this page",
+    "networkError": "Network error. Please check your connection."
+  }
+}

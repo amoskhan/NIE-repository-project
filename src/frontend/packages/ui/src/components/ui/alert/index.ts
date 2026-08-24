@@ -1,1 +1,1 @@
-export { default as AppAlert } from "./AppAlert.vue";
+export { default as NieAlert } from "./NieAlert.vue";

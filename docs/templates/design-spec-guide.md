@@ -39,10 +39,10 @@ Extends: `BaseService<EntityName>`
 | Method          | Signature                                                      | Description                                |
 | --------------- | -------------------------------------------------------------- | ------------------------------------------ |
 | GetAllAsync     | `Task<ApiResponse<List<EntityViewDto>>>`                       | List all active entities with related data |
-| GetByIdAsync    | `Task<ApiResponse<EntityViewDto>> (int id)`                    | Get single entity with full details        |
+| GetByIdAsync    | `Task<ApiResponse<EntityViewDto>> (Guid id)`                   | Get single entity with full details        |
 | CreateAsync     | `Task<ApiResponse<EntityViewDto>> (EntityCreateDto dto)`       | Create new entity                          |
-| EditAsync       | `Task<ApiResponse<EntityViewDto>> (int id, EntityEditDto dto)` | Update existing entity                     |
-| DeleteAsync     | `Task<ApiResponse<bool>> (int id)`                             | Soft delete (set IsActive = false)         |
+| EditAsync       | `Task<ApiResponse<EntityViewDto>> (Guid id, EntityEditDto dto)` | Update existing entity                     |
+| DeleteAsync     | `Task<ApiResponse<bool>> (Guid id)`                            | Soft delete (set IsActive = false)         |
 | [Custom method] | `Task<ApiResponse<T>> (params)`                                | [Business logic description]               |
 
 #### Business Logic Notes:
@@ -64,26 +64,25 @@ Extends: `BaseService<EntityName>`
 | ----------- | --------- | -------- | ------------------------ | ----- |
 | Name        | string    | Yes      | MaxLength(200), NotEmpty |       |
 | Description | string    | No       | MaxLength(2000)          |       |
-| CategoryId  | int       | Yes      | Must exist in Code table |       |
+| CategoryId  | Guid      | Yes      | Non-empty; must exist in Code table |       |
 | StartDate   | DateTime? | No       | Must be future date      |       |
 | EndDate     | DateTime? | No       | Must be > StartDate      |       |
 
 ### EntityEditDto
 
 Same as CreateDto plus:
-
-| Field | Type | Required | Validation | Notes            |
-| ----- | ---- | -------- | ---------- | ---------------- |
-| Id    | int  | Yes      | Must exist | From route param |
+| Field | Type | Required | Validation | Notes |
+|-------|------|----------|------------|-------|
+| Id | Guid | Yes | Non-empty UUID; must exist | From route param |
 
 ### EntityViewDto
 
 | Field        | Type      | Source                  | Notes                |
 | ------------ | --------- | ----------------------- | -------------------- |
-| Id           | int       | Entity.Id               |                      |
+| Id           | Guid      | Entity.Id               | UUIDv7               |
 | Name         | string    | Entity.Name             |                      |
 | Description  | string    | Entity.Description      |                      |
-| CategoryId   | int       | Entity.CategoryId       |                      |
+| CategoryId   | Guid      | Entity.CategoryId       |                      |
 | CategoryName | string    | Entity.Category.Value   | From Code table join |
 | Status       | string    | Entity.Status           |                      |
 | StatusName   | string    | Entity.StatusCode.Value | From Code table join |
@@ -185,7 +184,7 @@ paths:
           schema: { type: string }
         - name: categoryId
           in: query
-          schema: { type: integer }
+          schema: { type: string, format: uuid }
       responses:
         "200":
           description: Success
@@ -224,7 +223,7 @@ paths:
         - name: id
           in: path
           required: true
-          schema: { type: integer }
+          schema: { type: string, format: uuid }
       responses:
         "200":
           description: Success
@@ -238,7 +237,7 @@ paths:
         - name: id
           in: path
           required: true
-          schema: { type: integer }
+          schema: { type: string, format: uuid }
       requestBody:
         content:
           application/json:
@@ -257,7 +256,7 @@ paths:
         - name: id
           in: path
           required: true
-          schema: { type: integer }
+          schema: { type: string, format: uuid }
       responses:
         "200":
           description: Deleted
@@ -288,15 +287,15 @@ components:
       properties:
         name: { type: string, maxLength: 200 }
         description: { type: string, maxLength: 2000 }
-        categoryId: { type: integer }
+        categoryId: { type: string, format: uuid }
 
     EntityViewDto:
       type: object
       properties:
-        id: { type: integer }
+        id: { type: string, format: uuid }
         name: { type: string }
         description: { type: string }
-        categoryId: { type: integer }
+        categoryId: { type: string, format: uuid }
         categoryName: { type: string }
         createdBy: { type: string }
         createdAt: { type: string, format: date-time }

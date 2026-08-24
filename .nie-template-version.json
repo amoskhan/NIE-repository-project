@@ -1,0 +1,14 @@
+{
+  "templateName": "NIE Template",
+  "templateVersion": "2026.08.10.2",
+  "rulesVersion": "2026.08.10.1",
+  "releasedAtSgt": "2026-08-10T22:12:42+08:00",
+  "verifiedAtSgt": "2026-08-10T22:12:42+08:00",
+  "timezone": "Asia/Singapore",
+  "releaseType": "feature",
+  "breaking": false,
+  "sourceCommit": "b79dc2a0c17777b0f8553cd49957a6b8ffcf1449",
+  "sourceTemplateRepo": "https://niegithub.nie.edu.sg/NIE/nie-template",
+  "releaseNotesPath": "docs/template-releases/2026.08.10.2.md",
+  "governanceModel": "rules-only-ai-implementation-and-independent-verification"
+}

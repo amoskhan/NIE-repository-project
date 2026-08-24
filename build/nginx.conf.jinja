@@ -1,0 +1,6 @@
+[% set source %][% include "build/nginx.conf" %][% endset %]
+[[ source
+  | replace("application-auth-service", project_name ~ "-auth-service")
+  | replace("application-api-service", project_name ~ "-api-service")
+  | replace("MYAPP", project_name)
+-]]

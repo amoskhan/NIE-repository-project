@@ -1,2 +1,2 @@
-export { default as AppToastContainer } from "./AppToastContainer.vue";
-export type { Toast, ToastType } from "./AppToastContainer.vue";
+export { default as NieToastContainer } from "./NieToastContainer.vue";
+export type { Toast, ToastType } from "./NieToastContainer.vue";

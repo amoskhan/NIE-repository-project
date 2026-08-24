@@ -1,30 +1,32 @@
 import { expect, test, type Page, type Route } from "@playwright/test";
-import { CookieNames } from "../fixtures/cookie-names";
 
-const MAIN_APP_URL = process.env.CHAT_FRONTEND_MAIN ?? "http://localhost:8002/";
+const MAIN_APP_URL =
+  process.env.CHAT_FRONTEND_MAIN ?? "http://localhost:8002/";
 
 test.use({ serviceWorkers: "block" });
 
 const mockUser = {
   userId: "chat-actions-user",
   fullName: "Chat Actions User",
-  email: "chat.actions@example.edu",
+  email: "chat.actions@example.edu.sg",
   roles: ["SystemAdmin"],
   roleNames: ["System Administrator"],
   permissions: ["api.chat.use"],
 };
 
+const todayIso = new Date().toISOString();
+
 const conversations = [
   {
-    id: 1,
+    id: "019fc37a-71b9-7858-86f2-9fea26d10e34",
     title: "Budget review",
     userId: mockUser.userId,
     source: "procurement",
-    lastMessageAt: "2026-05-26T02:00:00Z",
+    lastMessageAt: todayIso,
     messageCount: 2,
   },
   {
-    id: 2,
+    id: "019fc37a-71b9-7ff2-84c5-f7a5d698a116",
     title: "Vendor shortlist",
     userId: mockUser.userId,
     source: "procurement",
@@ -43,17 +45,17 @@ async function fulfillJson(route: Route, body: unknown, status = 200) {
 
 async function mockChatShell(page: Page) {
   let renamedTitle = conversations[0].title;
-  let deletedConversationId: number | null = null;
+  let deletedConversationId: string | null = null;
 
   await page.context().addCookies([
     {
-      name: CookieNames.session,
+      name: "Application-SessionToken",
       value: "chat-actions-session",
       domain: "localhost",
       path: "/",
     },
     {
-      name: CookieNames.user,
+      name: "Application-User",
       value: JSON.stringify(mockUser),
       domain: "localhost",
       path: "/",
@@ -88,20 +90,20 @@ async function mockChatShell(page: Page) {
       return;
     }
 
-    if (url.includes("/Chat/conversations/1/messages")) {
+    if (url.includes("/Chat/conversations/019fc37a-71b9-7858-86f2-9fea26d10e34/messages")) {
       await fulfillJson(route, [
         {
-          id: 10,
+          id: "019fc37a-71b9-7255-9908-f50c815425eb",
           role: "user",
           content: "Can you summarize the budget?",
-          createdAt: "2026-05-26T02:00:00Z",
-          conversationId: 1,
+          createdAt: todayIso,
+          conversationId: "019fc37a-71b9-7858-86f2-9fea26d10e34",
         },
       ]);
       return;
     }
 
-    if (url.includes("/Chat/conversations/1/rename")) {
+    if (url.includes("/Chat/conversations/019fc37a-71b9-7858-86f2-9fea26d10e34/rename")) {
       const body = request.postDataJSON() as { title?: string };
       renamedTitle = body.title ?? renamedTitle;
       await route.fulfill({ status: 204 });
@@ -110,9 +112,9 @@ async function mockChatShell(page: Page) {
 
     if (
       request.method() === "DELETE" &&
-      url.includes("/Chat/conversations/1")
+      url.includes("/Chat/conversations/019fc37a-71b9-7858-86f2-9fea26d10e34")
     ) {
-      deletedConversationId = 1;
+      deletedConversationId = "019fc37a-71b9-7858-86f2-9fea26d10e34";
       await route.fulfill({ status: 204 });
       return;
     }
@@ -124,7 +126,10 @@ async function mockChatShell(page: Page) {
           .filter((conversation) => conversation.id !== deletedConversationId)
           .map((conversation) => ({
             ...conversation,
-            title: conversation.id === 1 ? renamedTitle : conversation.title,
+            title:
+              conversation.id === "019fc37a-71b9-7858-86f2-9fea26d10e34"
+                ? renamedTitle
+                : conversation.title,
           })),
       );
       return;
@@ -145,16 +150,16 @@ test.describe("chat conversation actions", () => {
     await page
       .getByRole("button", { name: "Budget review Today · 2 msgs" })
       .click();
-    await expect(page.getByText("Can you summarize the budget?")).toBeVisible();
+    await expect(
+      page.getByText("Can you summarize the budget?"),
+    ).toBeVisible();
 
     await page.getByLabel("Open actions for Budget review").click();
     await page.getByRole("button", { name: "Rename" }).click();
     await page.locator(".edit-input").fill("Renamed budget review");
     await page.keyboard.press("Enter");
 
-    await expect(
-      page.getByRole("heading", { name: "Renamed budget review" }),
-    ).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Renamed budget review" })).toBeVisible();
 
     await page.getByLabel("Open actions for Renamed budget review").click();
     await page.getByRole("button", { name: "Delete" }).click();

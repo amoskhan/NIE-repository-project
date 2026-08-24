@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SingPass Authentication</title>
+    <style>
+      body {
+        margin: 0;
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        background: #f8fafc;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+      }
+      .card {
+        max-width: 400px;
+        width: 90%;
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        padding: 32px;
+        text-align: center;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+      }
+      h1 {
+        font-size: 18px;
+        color: #0f172a;
+        margin: 16px 0 8px;
+      }
+      p {
+        font-size: 14px;
+        color: #64748b;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <h1>Returning to NIE Template</h1>
+      <p>This window will close automatically.</p>
+    </div>
+    <script>
+      (function () {
+        var params = new URLSearchParams(window.location.search);
+        var code = params.get("code") || "";
+        var state = params.get("state") || "";
+        var error =
+          params.get("error") || params.get("error_description") || "";
+        if (window.opener) {
+          window.opener.postMessage(
+            {
+              type: "application-auth-callback",
+              code: code,
+              state: state,
+              error: error,
+            },
+            window.location.origin,
+          );
+        }
+        window.close();
+      })();
+    </script>
+  </body>
+</html>

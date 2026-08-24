@@ -1,0 +1,43 @@
+appKey: application
+environment: dev
+hostingMode: path
+hostName: apps.dev.nie.edu.sg
+pathPrefix: MYAPP
+runtimeSecretName: runtime-config
+rollouts:
+  enabled: false
+workloads:
+  api:
+    image:
+      repository: example.invalid/application/api
+      tag: latest
+    nodePool: apps-arm
+    containerPort: 8080
+    servicePort: 80
+    healthPath: /health
+    ingressEnabled: true
+    pathSegment: api-main
+    strategy: RollingUpdate
+    replicas: 1
+    hpa:
+      minReplicas: 1
+      maxReplicas: 3
+      cpuUtilization: 70
+      memoryUtilization: 75
+  auth-api:
+    image:
+      repository: example.invalid/application/auth-api
+      tag: latest
+    nodePool: apps-arm
+    containerPort: 8080
+    servicePort: 80
+    healthPath: /health
+    ingressEnabled: true
+    pathSegment: api-auth
+    strategy: RollingUpdate
+    replicas: 1
+    hpa:
+      minReplicas: 1
+      maxReplicas: 3
+      cpuUtilization: 70
+      memoryUtilization: 75

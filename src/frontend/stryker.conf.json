@@ -1,0 +1,37 @@
+{
+  "$schema": "./node_modules/@stryker-mutator/core/schema/stryker-schema.json",
+  "_comment": "Mutation testing for the shared UI package. Line coverage says a line ran; a surviving mutant says no test noticed when that line's behaviour changed. Scoped to @nie/ui because every derived application depends on it. Run with: pnpm mutation:frontend",
+  "packageManager": "pnpm",
+  "plugins": [
+    "@stryker-mutator/vitest-runner",
+    "./stryker-vue-macro-ignorer.mjs"
+  ],
+  "ignorers": ["vue-compiler-macros"],
+  "testRunner": "vitest",
+  "vitest": {
+    "configFile": "packages/ui/vitest.config.ts"
+  },
+  "mutate": [
+    "packages/ui/src/**/*.ts",
+    "packages/ui/src/**/*.vue",
+    "!packages/ui/src/**/__tests__/**",
+    "!packages/ui/src/**/*.spec.ts",
+    "!packages/ui/src/**/*.d.ts",
+    "!packages/ui/src/index.ts"
+  ],
+  "reporters": ["html", "progress", "clear-text"],
+  "htmlReporter": {
+    "fileName": "reports/mutation/index.html"
+  },
+  "clearTextReporter": {
+    "maxTestsToLog": 5
+  },
+  "thresholds": {
+    "high": 80,
+    "low": 60,
+    "break": 10
+  },
+  "cleanTempDir": "always",
+  "timeoutMS": 60000,
+  "concurrency": 4
+}

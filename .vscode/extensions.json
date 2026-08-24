@@ -3,9 +3,8 @@
     "ms-dotnettools.csdevkit",
     "ms-dotnettools.csharp",
     "esbenp.prettier-vscode",
-    "editorconfig.editorconfig",
     "Vue.volar",
-    "ms-playwright.playwright",
+    "Vue.vscode-typescript-vue-plugin",
     "streetsidesoftware.code-spell-checker"
   ]
 }

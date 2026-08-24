@@ -6,7 +6,10 @@
 [*]
 indent_style = space
 indent_size = 4
-end_of_line = crlf
+# LF, matching .gitattributes `* text=auto`, which normalises every text file to
+# LF in the repository and in Linux CI checkouts. Declaring crlf here contradicted
+# that and made `dotnet format --verify-no-changes` fail on every LF checkout.
+end_of_line = lf
 charset = utf-8
 trim_trailing_whitespace = true
 insert_final_newline = true
@@ -71,6 +74,12 @@ dotnet_diagnostic.IDE0055.severity = warning
 
 # CA1816: Call GC.SuppressFinalize correctly
 dotnet_diagnostic.CA1816.severity = warning
+
+# CA1849: Call async methods when in an async method
+dotnet_diagnostic.CA1849.severity = warning
+
+# CA1869: Cache and reuse JsonSerializerOptions instances
+dotnet_diagnostic.CA1869.severity = warning
 
 # CA2016: Forward CancellationToken to methods
 dotnet_diagnostic.CA2016.severity = warning

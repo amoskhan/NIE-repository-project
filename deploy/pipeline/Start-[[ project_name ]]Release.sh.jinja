@@ -1,0 +1,2 @@
+[% set source %][% include "deploy/pipeline/Start-ApplicationRelease.sh" %][% endset %]
+[[ source | replace("application", project_name) -]]

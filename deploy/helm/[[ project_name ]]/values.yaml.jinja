@@ -1,0 +1,2 @@
+[% set source %][% include "deploy/helm/application/values.yaml" %][% endset %]
+[[ source | replace("application", project_name) | replace("MYAPP", project_name) -]]

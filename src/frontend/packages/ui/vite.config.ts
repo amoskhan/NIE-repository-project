@@ -9,12 +9,13 @@ export default defineConfig({
     dts({
       insertTypesEntry: true,
       include: ["src/**/*.ts", "src/**/*.vue"],
+      exclude: ["src/**/__tests__/**"],
     }),
   ],
   build: {
     lib: {
-      entry: resolve(__dirname, "src/index.ts"),
-      name: "AppTemplateUI",
+      entry: resolve(import.meta.dirname, "src/index.ts"),
+      name: "NieUI",
       fileName: "index",
       formats: ["es"],
     },
@@ -32,7 +33,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      "@": resolve(__dirname, "src"),
+      "@": resolve(import.meta.dirname, "src"),
     },
   },
 });

@@ -18,7 +18,7 @@ The requirements documentation captures WHAT the application should do, WHO uses
 
 ### Option A: AI-Assisted (Recommended)
 
-1. Open `.ai/README.md` and have your AI agent follow the AIDLC inception steps in `.ai/common/05-aidlc-process.md`
+1. Open `.ai/README.md`, then use `.ai/IMPLEMENT.md` with the objective and resolve applicable numbered policy rules before implementation.
 2. Provide your 1–3 paragraph project description
 3. AI will ask discovery questions — answer them thoroughly
 4. AI generates the full `requirements/` folder structure
@@ -53,7 +53,7 @@ Create the `requirements/` folder at repository root with these files:
 
 ## Users
 
-[Who will use this application: internal staff, students, members of the public, other systems?]
+[Who will use this application: NIE staff, students, external parties?]
 
 ## Key Entities
 
@@ -68,11 +68,11 @@ Create the `requirements/` folder at repository root with these files:
 
 ## Technology Stack
 
-- Backend: .NET 10 (App Template)
+- Backend: .NET 10 (NIE Template)
 - Frontend: Vue 3 + TypeScript
 - Database: PostgreSQL
 - Cache: Valkey
-- Auth: Session-based (App Template)
+- Auth: Session-based (NIE Template)
 ```
 
 ### `requirements/personas.md`
@@ -92,16 +92,15 @@ Define every user role with their permissions:
 - [Goal 2]
 
 **Permissions**:
-
-| Action             | Allowed |
-| ------------------ | ------- |
-| View all records   | Yes/No  |
-| Create records     | Yes/No  |
-| Edit own records   | Yes/No  |
-| Edit all records   | Yes/No  |
-| Delete records     | Yes/No  |
-| Access admin panel | Yes/No  |
-| Export data        | Yes/No  |
+| Action | Allowed |
+|--------|---------|
+| View all records | Yes/No |
+| Create records | Yes/No |
+| Edit own records | Yes/No |
+| Edit all records | Yes/No |
+| Delete records | Yes/No |
+| Access admin panel | Yes/No |
+| Export data | Yes/No |
 ```
 
 ### `requirements/use-cases.md`
@@ -220,7 +219,7 @@ Sidebar:
 
 | Field | Label | Component | Required | Validation     |
 | ----- | ----- | --------- | -------- | -------------- |
-| name  | Name  | AppInput  | Yes      | maxLength: 200 |
+| name  | Name  | NieInput  | Yes      | maxLength: 200 |
 ```
 
 ### `requirements/data-flow.md`
@@ -278,7 +277,7 @@ Define performance, security, accessibility requirements:
 
 ## Security
 
-- Session-based auth (App Template)
+- Session-based auth (NIE Template)
 - Role-based access control
 - Input sanitization on all forms
 
@@ -308,3 +307,4 @@ Before proceeding to Phase 1.2:
 - [ ] Test cases exist for every use case
 - [ ] Non-functional requirements are specified
 - [ ] Stakeholders have reviewed and approved
+

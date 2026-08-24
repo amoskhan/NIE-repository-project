@@ -1,6 +1,6 @@
-# @apptemplate/ui
+# @nie/ui
 
-Shared visual design system and reusable Vue components for App Template.
+Shared visual design system and reusable Vue components for NIE Template.
 
 ## Put Code Here When
 
@@ -18,15 +18,15 @@ Shared visual design system and reusable Vue components for App Template.
 
 ## Reuse-First Components
 
-- `AppDataTable` for list pages with search, filtering, pagination, and mobile dock behavior
-- `AppListControls` for list toolbar behavior
-- `AppSmartFilterDropdown` for shared filter popovers and sheets
-- `AppPageHeader` for page titles and metadata
-- `AppModal`, `AppPagination`, `AppStatePanel`, and `AppFileUpload` before adding app-specific variants
+- `NieDataTable` for list pages with search, filtering, pagination, and mobile dock behavior
+- `NieListControls` for list toolbar behavior
+- `NieSmartFilterDropdown` for shared filter popovers and sheets
+- `NiePageHeader` for page titles and metadata
+- `NieModal`, `NiePagination`, `NieStatePanel`, and `NieFileUpload` before adding app-specific variants
 
 ## Authoring Rules
 
-- Use the `App` prefix for exported components
+- Use the `Nie` prefix for exported components
 - Export every new public surface from the nearest `index.ts` and from `src/index.ts`
 - Keep business-domain API calls out of this package
 - Prefer props and slots over app-specific assumptions

@@ -1,1 +1,1 @@
-export { default as AppListControls } from "./AppListControls.vue";
+export { default as NieListControls } from "./NieListControls.vue";

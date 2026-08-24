@@ -1,0 +1,23 @@
+services:
+  rabbitmq:
+    image: rabbitmq:4.3.4-management-alpine@sha256:cd624335f752f704e768239ea21501e5771ca13b3b278520da5ad1076eb86e55
+    user: rabbitmq
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: ${NIE_RABBITMQ_USER:?Set NIE_RABBITMQ_USER in an ignored local environment file}
+      RABBITMQ_DEFAULT_PASS: ${NIE_RABBITMQ_PASSWORD:?Set NIE_RABBITMQ_PASSWORD in an ignored local environment file}
+      RABBITMQ_DEFAULT_VHOST: ${NIE_RABBITMQ_VHOST:-nie}
+    ports:
+      - "${NIE_RABBITMQ_PORT:-5672}:5672"
+      - "${NIE_RABBITMQ_MANAGEMENT_PORT:-15672}:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+
+volumes:
+  rabbitmq-data:

@@ -1,0 +1,16 @@
+{{- range $name, $workload := .Values.workloads }}
+{{- if $workload.pdb }}
+{{- $serviceName := include "application.serviceName" (list $ $name) }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ $serviceName }}
+spec:
+  minAvailable: {{ $workload.pdb.minAvailable }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "application.name" $ }}
+      app.kubernetes.io/component: {{ $name }}
+---
+{{- end }}
+{{- end }}

@@ -1,0 +1,12 @@
+# Pre-push gate (NIE-GOV-009, NIE-TEST-001).
+#
+# pre-commit stays fast: format + lint + build only. Tests run here instead, so
+# a developer cannot outrun the suite locally, while still getting quick commits.
+#
+# PostgreSQL- and RabbitMQ-backed tests skip when NIE_TEST_POSTGRES_ADMIN_CONNECTION
+# and NIE_TEST_RABBITMQ_CONNECTION are unset, so this hook works on a laptop with
+# no services running. CI sets both, so nothing is skipped there.
+# To run the full suite locally, start the services and export both variables.
+
+pnpm --dir src/frontend -r test
+dotnet test --solution src/backend/Backend.sln -c Release

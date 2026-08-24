@@ -1,13 +1,10 @@
-# Normalize line endings on commit AND check everything out with LF, on every
-# platform. The whole stack (dotnet publish, pnpm build, docker build, helm)
-# runs in Linux containers, so a CRLF working tree only causes churn — and it
-# breaks shell scripts outright ("/bin/bash^M: bad interpreter").
-# Keep this in step with `end_of_line = lf` in .editorconfig.
-* text=auto eol=lf
+# Normalize line endings on commit; let git pick the working-tree EOL by default.
+* text=auto
 
-# Called out explicitly because breaking these is the loudest failure:
-# LocalStack init hooks and task verify scripts run inside Linux containers.
+# Shell scripts MUST stay LF — they run in Linux containers (LocalStack init hooks,
+# task verify.sh) where CRLF breaks the shebang ("/bin/bash^M: bad interpreter").
 *.sh text eol=lf
+*.sh.jinja text eol=lf
 
 # Common binary types — never normalize.
 *.png binary
@@ -19,6 +16,3 @@
 *.pdf binary
 *.woff binary
 *.woff2 binary
-
-# Lockfiles are generated: keep them out of diffs and merge conflicts noise.
-pnpm-lock.yaml -diff linguist-generated

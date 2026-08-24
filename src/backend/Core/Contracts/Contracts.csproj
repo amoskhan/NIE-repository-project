@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Contracts</RootNamespace>
+    <IsPackable>true</IsPackable>
+    <PackageId Condition="'$(IntegrationContractPackageId)' == ''">Application.Integration.Contracts</PackageId>
+    <PackageId Condition="'$(IntegrationContractPackageId)' != ''">$(IntegrationContractPackageId)</PackageId>
+    <Description>Versioned integration events and protobuf contracts owned or consumed by the application.</Description>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Google.Protobuf" />
+    <PackageReference Include="Grpc.Core.Api" />
+    <PackageReference Include="Grpc.Tools" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="\" />
+    <None Include="integration-manifest.json" Pack="true" PackagePath="contentFiles/any/any/" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="integration-manifest.schema.json" Pack="true" PackagePath="contentFiles/any/any/" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Protos\procurement\v1\procurement_query.proto" Pack="true" PackagePath="contentFiles/any/any/Protos/procurement/v1/procurement_query.proto" />
+    <None Include="Protos\vendor\v1\vendor_directory.proto" Pack="true" PackagePath="contentFiles/any/any/Protos/vendor/v1/vendor_directory.proto" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Protobuf Include="Protos\procurement\v1\procurement_query.proto" GrpcServices="Both" />
+    <Protobuf Include="Protos\vendor\v1\vendor_directory.proto" GrpcServices="Client" />
+  </ItemGroup>
+
+</Project>

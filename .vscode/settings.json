@@ -1,30 +1,11 @@
 {
   "remote.autoForwardPorts": false,
   "dotnet.projects.enableFileBasedPrograms": false,
-  // Point C# Dev Kit at the solution so it does not prompt on every open.
-  "dotnet.defaultSolution": "src/backend/AppTemplate.sln",
   "editor.defaultFormatter": "esbenp.prettier-vscode",
   "[javascript]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
-  "[typescript]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode"
-  },
   "[vue]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
-  },
-  "[csharp]": {
-    "editor.defaultFormatter": "ms-dotnettools.csharp"
-  },
-  // Matches .editorconfig / .gitattributes: LF everywhere, on every platform.
-  "files.eol": "\n",
-  "files.insertFinalNewline": true,
-  "files.trimTrailingWhitespace": true,
-  "search.exclude": {
-    "**/bin": true,
-    "**/obj": true,
-    "**/dist": true,
-    "**/node_modules": true
-  },
-  "window.title": "AppTemplate${separator}${dirty}${activeEditorShort}"
+  }
 }

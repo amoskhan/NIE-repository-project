@@ -1,29 +1,39 @@
-# Runtime Configuration and Observability
+# Runtime Configuration and Observability Dossier
 
 ## Purpose
 
-This document records two related things:
+This dossier records the Launchpad v2 patterns reviewed and the NIE Template changes made so the frontend can be built once and deployed under different application paths without rebuilding for each environment. It also records the Sentry, OpenTelemetry, health, metrics, and uptime-monitoring setup added to the template.
 
-1. How the frontend is built **once** and deployed under different application paths and environments without a rebuild.
-2. How Sentry, OpenTelemetry, health endpoints, metrics, and uptime monitoring are wired into the template.
+No Sentry DSNs, OneSignal app IDs, OpenTelemetry collector endpoints, or other keys are embedded in this template.
 
-No Sentry DSNs, OneSignal app IDs, OpenTelemetry collector endpoints, or other keys are embedded in this template. Every one of them is an empty placeholder that you fill in at deploy time.
+## Launchpad v2 Reference Points
 
-## Design principles
+Reviewed local Launchpad v2 files under `temp/launchpad-v2`:
 
-- Frontend API roots are centralized in a shared constants module. Application services import those constants instead of reading a per-call environment variable.
-- Frontend Sentry and browser OpenTelemetry are initialized through one shared utility, not per app.
-- Backends use Sentry for errors, performance, logs, and metrics, with OpenTelemetry trace correlation.
-- Every backend exposes health endpoints so an external monitor can watch it.
-- Scheduled background jobs report to Sentry Cron Monitoring with an explicit monitor slug, cron expression, margin, max runtime, and timezone.
+- `src/frontend/packages/platform/src/config/constants.ts`
+- `src/frontend/packages/platform/src/utils/sentry.ts`
+- `src/frontend/apps/main/src/services/core/api.ts`
+- `src/backend/Hosts/Api/Program.cs`
+- `src/backend/Hosts/Auth/Program.cs`
+- `src/backend/Hosts/Api/Jobs/Notifications/NotificationDispatcherJob.cs`
 
-## Runtime URL strategy
+Relevant Launchpad v2 patterns:
 
-Frontend runtime URLs live in:
+- Frontend API roots are centralized in shared constants, with app services using constants instead of per-call environment variables.
+- Frontend Sentry and browser OpenTelemetry are initialized through a shared utility.
+- Backends use Sentry for errors, performance, logs, metrics, and OpenTelemetry trace correlation.
+- Backends expose health endpoints for uptime monitoring.
+- Scheduled background jobs report to Sentry Cron Monitoring with an explicit monitor slug, cron interval, margin, max runtime, and Singapore timezone.
 
-- `src/frontend/packages/shared/src/config/constants.ts`
+## NIE Template Runtime URL Strategy
 
-The frontend derives its application base path from `window.location.pathname` at runtime, so the same build artifact works at the domain root or under a path prefix.
+The NIE Template now centralizes frontend runtime URLs in:
+
+- `src/frontend/packages/platform/src/config/constants.ts`
+
+The frontend derives its application base path from `window.location.pathname`.
+
+Examples:
 
 ```text
 https://domain.example/MYAPP/        -> app base /MYAPP
@@ -51,67 +61,66 @@ The exported constants include:
 - `FRONTEND_CONSTANTS.openTelemetry`
 - `FRONTEND_CONSTANTS.oneSignal`
 
-Vite proxying is local-development only:
+Vite remains local-development only for backend proxying:
 
 ```text
 /api-auth/api -> http://localhost:5001
 /api-main     -> http://localhost:5002
 ```
 
-Deployment paths are aligned in:
+Production deployment paths were aligned in:
 
 - `build/nginx.conf`
 - `build/appsettings.api.json`
 - `build/appsettings.auth.json`
 
-## Runtime configuration slots
+## Runtime Configuration Slots
 
-The frontend reads non-secret runtime values from either the `window.__APP_TEMPLATE_CONFIG__` global or matching meta tags. The hosting page, reverse proxy, or entry-point template injects them at serve time — they are **not** baked into the bundle.
+The frontend reads non-secret runtime values from either `window.__NIE_APPLICATION_CONFIG__` or matching meta tags.
 
 Supported keys:
 
 - `cookieDomain`
 - `oneSignalAppId`
 - `openTelemetryExporterEndpoint`
+- `portalSsoEnabled`
 - `sentryDsn`
 - `sentryEnvironment`
 - `sentryTracesSampleRate`
+
+Meta tag form:
+
+```html
+<meta name="nie:sentryDsn" content="">
+<meta name="nie:openTelemetryExporterEndpoint" content="">
+<meta name="nie:portalSsoEnabled" content="true">
+```
 
 Runtime global form:
 
 ```html
 <script>
-  window.__APP_TEMPLATE_CONFIG__ = {
+  window.__NIE_APPLICATION_CONFIG__ = {
     sentryDsn: "",
     sentryEnvironment: "stg",
     openTelemetryExporterEndpoint: "",
+    portalSsoEnabled: true,
     oneSignalAppId: "",
   };
 </script>
 ```
 
-Meta-tag form (the fallback when no global is present):
+## Frontend Observability
 
-```html
-<meta name="app:sentryDsn" content="" />
-<meta name="app:openTelemetryExporterEndpoint" content="" />
-```
+Frontend observability is implemented in:
 
-> The meta-tag name prefix is defined by `getMetaContent()` in `src/frontend/packages/shared/src/config/constants.ts`. If you change it there, change it in your hosting page too.
-
-**Only non-secret values belong here.** Anything the browser downloads is public. A Sentry DSN and a OneSignal app ID are designed to be public; an API key or a client secret is not.
-
-## Frontend observability
-
-Implemented in:
-
-- `src/frontend/packages/shared/src/utils/sentry.ts`
-- `src/frontend/main/src/main.ts`
-- `src/frontend/auth/src/main.ts`
+- `src/frontend/packages/platform/src/utils/sentry.ts`
+- `src/frontend/apps/main/src/main.ts`
+- `src/frontend/apps/auth/src/main.ts`
 
 Behavior:
 
-- Initializes Sentry Vue only when a runtime DSN is present. With no DSN, the app runs normally and reports nothing.
+- Initializes Sentry Vue only when a runtime DSN is present.
 - Initializes browser OpenTelemetry only when not running on localhost and an OTLP endpoint is present.
 - Adds browser tracing integration for Vue Router.
 - Adds optional replay support, disabled for normal sessions by default.
@@ -120,99 +129,111 @@ Behavior:
 - Instruments document load, fetch, and XHR.
 - Ignores Sentry ingestion URLs during browser telemetry capture.
 
-## Backend observability
+## Backend Observability
 
-Aligned across both services:
+Backend observability was aligned across API and Auth:
 
-- `src/backend/API/Extensions/ObservabilityExtensions.cs`
-- `src/backend/Auth/Extensions/ObservabilityExtensions.cs`
-- `src/backend/API/Program.cs`
-- `src/backend/Auth/Program.cs`
+- `src/backend/Hosts/Api/Extensions/Observability/ObservabilityExtensions.cs`
+- `src/backend/Hosts/Auth/Extensions/ObservabilityExtensions.cs`
+- `src/backend/Hosts/Api/Program.cs`
+- `src/backend/Hosts/Auth/Program.cs`
 
 Behavior:
 
 - Configures Sentry only when `Sentry:Dsn` is present.
 - Enables Sentry logs, metrics, tracing, profiling, stack traces, and OpenTelemetry correlation.
-- Keeps `SendDefaultPii` disabled. Do not turn it on to debug something — you will ship personal data to a third party.
-- Adds a service tag per backend so `api-main` and `api-auth` are distinguishable in one project.
-- Configures OpenTelemetry independently from Sentry, so OTLP can run without a Sentry DSN and vice versa.
-- Instruments ASP.NET Core, HttpClient, EF Core where applicable, runtime metrics, AI activity sources, and Npgsql sources.
+- Keeps `SendDefaultPii` disabled.
+- Adds service tags for each backend.
+- Configures OpenTelemetry independently from Sentry so OTLP can run without a Sentry DSN.
+- Adds ASP.NET Core, HttpClient, EF Core where applicable, runtime metrics, AI activity sources, and Npgsql sources.
 - Adds OTLP exporters only when `OpenTelemetry:ExporterEndpoint` or `OTEL_EXPORTER_OTLP_ENDPOINT` is configured.
 - Adds OpenTelemetry logs with scopes, formatted messages, and parsed state values.
 
-Deployment placeholders live in `build/appsettings.api.json` and `build/appsettings.auth.json`.
+Template appsettings placeholders were added in:
 
-## Health and uptime monitoring
+- `build/appsettings.api.json`
+- `build/appsettings.auth.json`
+
+## Health and Uptime Monitoring
 
 Health endpoints:
 
-- Main API: `/health` and `/health/ready`
-- Auth API: `/health` and `/health/ready`
+- API: `/health` and `/health/ready`
+- Auth: `/health` and `/health/ready`
 
-Readiness uses real health checks, not a static OK. Auth readiness includes Valkey when configured; Main API readiness includes the database and Valkey checks.
+Readiness now uses health checks instead of a static OK response.
 
-For external uptime monitoring, point Sentry Uptime, Better Stack, Azure Monitor, GitHub Actions on a schedule, or any other monitor at the deployed health endpoints:
+Auth readiness includes Redis when configured. API readiness includes the existing database and Redis health checks.
+
+For external uptime monitoring, point Sentry Uptime, Azure Monitor, or another monitor at the deployed health endpoint:
 
 ```text
 https://domain.example/MYAPP/api-auth/health
 https://domain.example/MYAPP/api-main/health
 ```
 
-## Sentry project conventions
+## Fleet Sentry Creation Rules
 
-When a project sets Sentry up, generate the configuration from project metadata rather than copying another project's file.
+The fleet setup must be generated from project metadata, not from a fixed `sentry.uptime.json` copied between applications.
 
-- Give every application an explicit `applicationSlug` and `pathPrefix`.
-- Backend Sentry project slug is `<applicationSlug>-backend`. All backend services in the same application share that DSN.
-- Frontend Sentry project slug is `<applicationSlug>-frontend`. All frontend SPAs in the same application share that DSN.
-- Backend **service tags** differentiate `api-main`, `api-auth`, and any other backend service. Do not create a second Sentry project for a second service.
-- Frontend service/app tags differentiate `main`, `login`, and any other frontend surface.
-- Extra Sentry projects are justified only for a genuinely separate runtime, for example `<applicationSlug>-worker`.
-- Uptime monitors target `/health` only. Do not monitor `/health/ready` unless you specifically need a separate load-balancer readiness probe.
-- Cron monitors use `<applicationSlug>-<monitorSlug>` and the application's configured timezone.
-- DSNs are runtime configuration. Backend DSNs live under `Sentry:Dsn`; frontend DSNs arrive through `window.__APP_TEMPLATE_CONFIG__.sentryDsn` or the matching meta tag. Environment values and tags separate dev, staging, and production.
-- A worker with no public HTTP surface still gets error monitoring but no uptime check.
+Rules for derived projects:
 
-## Cron monitoring
+- Every application entry must have an explicit `applicationSlug` and `pathPrefix`.
+- Backend Sentry project slug is `<applicationSlug>-backend`. All backend services in the same app use that DSN.
+- Frontend Sentry project slug is `<applicationSlug>-frontend`. All frontend SPAs in the same app use that DSN.
+- Backend service tags differentiate `api-main`, `api-auth`, `api-access`, and other backend service slugs.
+- Frontend service/app tags differentiate `main`, `login`, `public`, and other frontend surfaces.
+- Optional extra Sentry projects are allowed only for separate runtimes such as `<applicationSlug>-cms`, `<applicationSlug>-worker`, `<applicationSlug>-maps-backend`, or `<applicationSlug>-maps-frontend`.
+- Sentry Uptime monitors target `/health` only. Do not create uptime checks against `/health/ready` unless a project explicitly needs a separate load-balancer readiness probe.
+- Cron monitors use `<applicationSlug>-<monitorSlug>` and Asia/Singapore timezone.
+- DSNs are runtime configuration values. Backend DSNs live under `Sentry:Dsn`; frontend DSNs are injected through `window.__NIE_APPLICATION_CONFIG__.sentryDsn` or `<meta name="nie:sentryDsn">`. Environment values and tags separate dev, staging, production, and service surfaces.
+- Worker services without public HTTP uptime, such as an MCP server, still get Sentry error monitoring but can set `uptime: false`.
 
-Sentry Cron Monitoring is wired up for the audit-log purge job as the reference implementation:
+The local fleet config shape used by tools should mirror `Nie.SentrySetup/projects/fleet.json`: one folder per project, one service list per project, optional `cronMonitors`, and generated lock files under `Nie.SentrySetup/projects/<folderName>/`.
 
-- `src/backend/API/Observability/SentryCronMonitor.cs`
-- `src/backend/API/Jobs/AuditLogPurgeJob.cs`
+## Cron Monitoring
+
+Sentry Cron Monitoring support was added for the API audit purge job:
+
+- `src/backend/Hosts/Api/Observability/SentryCronMonitor.cs`
+- `src/backend/Hosts/Api/Jobs/Audit/AuditLogPurgeJob.cs`
 
 Monitor:
 
 ```text
-slug:     apptemplate-audit-log-purge
+slug: application-audit-log-purge
 interval: 0 2 * * *
-timezone: Asia/Singapore   (the shipped default — configurable per project)
+timezone: Asia/Singapore
 ```
 
-The helper reports in-progress, ok, and error check-ins when Sentry is configured, and is a no-op when it is not. Copy this pattern for every scheduled job you add: a job that fails silently at 2am is indistinguishable from a job that never ran.
+The helper reports in-progress, ok, and error check-ins to Sentry when Sentry is configured. It remains a no-op when Sentry is not configured.
 
-## Regional defaults
-
-Timezone and locale are configuration, not constants. The template ships `Asia/Singapore` and `en-SG` as defaults because it has to ship _something_. Change them in your project's configuration if your users are elsewhere — nothing in the code assumes those values beyond the defaults.
-
-## Operational notes
+## Operational Notes
 
 - Do not add `.env`-only frontend URL dependencies for deployed API roots.
 - Keep deploy-specific values injected at runtime by the hosting page, reverse proxy, or secret provider.
-- Keep the frontend build artifact reusable across dev, staging, and production.
-- For a new frontend API client, import `FRONTEND_CONSTANTS` or `getBackendUrl()` from `@apptemplate/shared`.
-- For a new backend service, use the `AddObservability` pattern and tag the correct service name.
+- Keep the frontend build artifact reusable across dev, stg, and prd.
+- Do not copy Launchpad v2 DSNs, OneSignal app IDs, API keys, or collector endpoints into the template.
+- For new frontend API clients, import `FRONTEND_CONSTANTS` or `getBackendUrl()` from the shared package.
+- For new backend services, use the `AddObservability` pattern and tag the correct service name.
 
 ## Validation
 
-Commands worth running after any change in this area:
+Validation commands run during this change:
 
 ```text
-pnpm --filter @apptemplate/shared type-check
+pnpm --filter @nie/platform type-check
 pnpm --filter main type-check
 pnpm --filter auth type-check
-dotnet restore src/backend/AppTemplate.sln
-dotnet build src/backend/Auth/Auth.csproj
-dotnet build src/backend/API/API.csproj
+dotnet restore src/backend/Backend.sln
+dotnet build src/backend/Hosts/Auth/Auth.csproj -p:OutDir=temp/verify-auth/
+dotnet build src/backend/Hosts/Api/Api.csproj -p:OutDir=temp/verify-api/
 pnpm --filter main build:production
 pnpm --filter auth build:production
+```
+
+Known existing warning:
+
+```text
+NU1608: Npgsql.EntityFrameworkCore.PostgreSQL 9.0.1 requires Microsoft.EntityFrameworkCore >= 9.0.0 && < 10.0.0, but Microsoft.EntityFrameworkCore 10.0.5 was resolved.
 ```

@@ -1,0 +1,35 @@
+{
+  "$schema": "integration-manifest.schema.json",
+  "schemaVersion": 1,
+  "applicationKey": "application",
+  "publishes": [
+    {
+      "name": "nie.procurement.purchase-order.status-changed",
+      "version": 1,
+      "contract": "Contracts.Events.Procurement.PurchaseOrderStatusChangedV1",
+      "contentType": "application/json"
+    }
+  ],
+  "subscribes": [
+    {
+      "name": "nie.vendor-master.vendor-profile.changed",
+      "version": 1,
+      "contract": "Contracts.Events.VendorMaster.VendorProfileChangedV1",
+      "contentType": "application/json"
+    }
+  ],
+  "grpcProvides": [
+    {
+      "service": "nie.integration.procurement.v1.ProcurementQuery",
+      "contract": "Protos/procurement/v1/procurement_query.proto",
+      "methods": ["GetPurchaseOrderSummary"]
+    }
+  ],
+  "grpcConsumes": [
+    {
+      "service": "nie.integration.vendor.v1.VendorDirectory",
+      "contract": "Protos/vendor/v1/vendor_directory.proto",
+      "methods": ["GetVendorSnapshot"]
+    }
+  ]
+}

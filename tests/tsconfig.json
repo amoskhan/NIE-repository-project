@@ -1,29 +1,18 @@
 {
-  // Type-checking / editor config for the Playwright suite.
-  //
-  // Why this file exists: some specs import helpers straight out of the main SPA
-  // (e.g. specs/e2e/notification-preferences.e2e.spec.ts imports
-  // src/frontend/main/src/services/notificationPreferencesService.ts), and those
-  // modules resolve their own imports through the "@/" alias. Playwright's esbuild
-  // transform happens to erase `import type` lines, so the alias used to "work" by
-  // accident. The `paths` entry below makes it real: it mirrors the alias defined in
-  // src/frontend/main/vite.config.ts so editors, tsc and Playwright agree.
   "compilerOptions": {
     "target": "ES2022",
+    "lib": ["ES2022", "DOM"],
     "module": "ESNext",
     "moduleResolution": "bundler",
-    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "types": ["node"],
     "strict": true,
+    "noEmit": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
-    "isolatedModules": true,
-    "noEmit": true,
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["../src/frontend/main/src/*"]
-    }
+    "isolatedModules": true
   },
   "include": ["specs/**/*.ts", "playwright.config.ts"],
-  "exclude": ["node_modules", "test-results", "reports"]
+  "exclude": ["node_modules", "reports", "test-results"]
 }

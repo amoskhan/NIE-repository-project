@@ -4,7 +4,6 @@
  */
 
 import { APIRequestContext, request } from "@playwright/test";
-import { CookieNames } from "./cookie-names";
 import { TestConfig } from "./test-config";
 
 export interface ApiResponse<T = any> {
@@ -15,19 +14,14 @@ export interface ApiResponse<T = any> {
   responseTime: number;
 }
 
-/** Mirror of the Auth API's IssuedLoginResponse. */
 export interface LoginResponse {
   isAuthenticated: boolean;
   userId: string;
   sessionToken: string;
   userName: string;
-  fullName?: string;
   email: string;
-  department?: string;
   roles?: string[];
-  permissions?: string[];
   errorMessage?: string;
-  message?: string;
 }
 
 export interface AuthCookies {
@@ -108,11 +102,10 @@ export class ApiClient {
     };
 
     if (this.sessionToken) {
-      // X-Session-Id is how every API actually reads the session. The cookie is sent
-      // as well so a browser-style request is exercised too; it uses the canonical
-      // name from src/frontend/packages/shared/src/config/constants.ts.
       headers["X-Session-Id"] = this.sessionToken;
-      headers["Cookie"] = `${CookieNames.session}=${this.sessionToken}`;
+      // Adjust cookie names based on your session implementation
+      headers["Cookie"] =
+        `SessionToken=${this.sessionToken}; UserId=${this.userId}`;
     }
 
     return headers;

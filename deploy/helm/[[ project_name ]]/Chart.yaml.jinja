@@ -1,0 +1,8 @@
+[% set source %][% include "deploy/helm/application/Chart.yaml" %][% endset %]
+[[ source
+  | replace("name: application", "name: " ~ project_name)
+  | replace(
+      "description: NIE Template backend workloads for the shared AWS platform",
+      "description: " ~ ((project_title ~ " backend workloads for the shared AWS platform") | tojson)
+    )
+-]]

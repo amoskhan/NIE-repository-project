@@ -55,19 +55,8 @@ export const TestConfig = {
   headless: process.env.HEADLESS !== "false",
   recordVideo: process.env.RECORD_VIDEO === "true",
   screenshotOnFailure: process.env.SCREENSHOT_ON_FAILURE !== "false",
-
-  // Local identity provider — the account the backend seeds on a fresh database.
-  // Overridable so the same specs can run against a differently-seeded environment.
-  seedUsername: optionalEnv("SEED_ADMIN_USERNAME", "admin"),
-  seedPassword: optionalEnv("SEED_ADMIN_PASSWORD", "Admin@12345"),
-  // How many consecutive failures the Auth API tolerates before locking an account.
-  // The lockout spec only needs an UPPER bound, so over-estimating here is harmless.
-  lockoutThreshold: parseInt(optionalEnv("AUTH_LOCKOUT_THRESHOLD", "5")),
+  portalSsoExpectedEnabled: process.env.PORTAL_SSO_EXPECT_ENABLED === "true",
 };
-
-// Re-exported for convenience; defined in its own side-effect-free module so that
-// fully-mocked specs can import the cookie names without triggering requireEnv above.
-export { CookieNames } from "./cookie-names";
 
 /**
  * Frontend Routes for E2E testing
@@ -77,18 +66,14 @@ export const Routes = {
   // Main app routes
   dashboard: "dashboard",
   profile: "profile",
-  // Procurement reference sample routes (delete in derived repos via task 0002)
+  // Procurement reference sample routes (remove only after an approved domain replacement)
   vendors: "vendors",
   catalog: "catalog",
   orderHistory: "orders",
   approvals: "approvals",
 
-  // Auth app routes. The auth SPA uses hash routing, so everything after "#" is a
-  // client-side route the server never sees. Append these to FRONTEND_AUTH.
+  // Auth app routes
   login: "",
-  register: "#/register",
-  forgotPassword: "#/forgot-password",
-  resetPassword: "#/reset-password",
   logout: "logout",
 } as const;
 
@@ -97,37 +82,32 @@ export const Routes = {
  * Paths relative to the API base URL
  */
 export const ApiEndpoints = {
-  // Auth API - local identity provider
+  // Auth API
   auth: {
     login: "Auth/Login",
     logout: "Auth/Logout",
     verify: "Auth/Verify",
-    refresh: "Auth/Refresh",
-    getProfile: "Auth/GetProfile",
+    getUser: "Auth/GetUser",
     createTestSession: "Auth/CreateTestSession",
-    register: "Auth/Register",
-    forgotPassword: "Auth/ForgotPassword",
-    resetPassword: "Auth/ResetPassword",
-    changePassword: "Auth/ChangePassword",
-    // Optional external OIDC slot; ships disabled, so ExternalProviders returns [].
-    externalProviders: "Auth/ExternalProviders",
-    externalStart: "Auth/ExternalStart",
+    ssoStart: "Auth/SsoStart",
+    ssoCallback: "Auth/SsoCallback",
+    ssoFinalize: "Auth/SsoFinalize",
   },
 
-  // Main API - Procurement (reference sample; delete in derived repos via task 0002)
+  // Main API - Procurement (reference sample; remove only after an approved domain replacement)
   vendor: {
     getAll: "Vendor/GetAll",
-    get: (id: number) => `Vendor/Get/${id}`,
+    get: (id: string) => `Vendor/Get/${id}`,
     save: "Vendor/Save",
     edit: "Vendor/Edit",
-    delete: (id: number) => `Vendor/Delete/${id}`,
+    delete: (id: string) => `Vendor/Delete/${id}`,
   },
   purchaseOrder: {
     getAll: "PurchaseOrder/GetAll",
-    get: (id: number) => `PurchaseOrder/Get/${id}`,
+    get: (id: string) => `PurchaseOrder/Get/${id}`,
     save: "PurchaseOrder/Save",
     edit: "PurchaseOrder/Edit",
-    delete: (id: number) => `PurchaseOrder/Delete/${id}`,
+    delete: (id: string) => `PurchaseOrder/Delete/${id}`,
   },
 
   // Main API - Code
@@ -139,8 +119,8 @@ export const ApiEndpoints = {
   // Main API - Document
   document: {
     upload: "Document/Upload",
-    download: (id: number) => `Document/Download/${id}`,
-    delete: (id: number) => `Document/Delete/${id}`,
+    download: (id: string) => `Document/Download/${id}`,
+    delete: (id: string) => `Document/Delete/${id}`,
   },
 
   // Health checks

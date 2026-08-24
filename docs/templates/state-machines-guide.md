@@ -88,7 +88,7 @@ stateDiagram-v2
 
 ### Step 4: Define Code Table Values
 
-Since App Template uses Code tables for statuses:
+Since NIE Template uses Code tables for statuses:
 
 ```markdown
 ## Code Table Configuration
@@ -114,7 +114,7 @@ State transitions are enforced in the Service layer:
 \`\`\`csharp
 // In YourEntityService.cs
 public async Task<ApiResponse<YourEntityDto>> TransitionStateAsync(
-int id, string newStatus, string? reason = null)
+Guid id, string newStatus, string? reason = null)
 {
 var entity = await \_dbContext.YourEntities.FindAsync(id);
 if (entity == null) return ApiResponse<YourEntityDto>.NotFound();
@@ -184,7 +184,7 @@ private static readonly HashSet<(string, string)> ValidTransitions = new()
 3. **Document side effects** — State transitions often trigger emails, logs, or timestamp updates
 4. **Role-based transitions** — Not all users can trigger all transitions
 5. **Separate concerns** — State validation in Service layer, display logic in Frontend
-6. **Code tables, not enums** — Use App Template's Code table pattern for status values
+6. **Code tables, not enums** — Use NIE Template's Code table pattern for status values
 
 ## Review Checklist
 

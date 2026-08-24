@@ -12,6 +12,7 @@ $RECYCLE.BIN/
 # ============================================================
 .idea/
 .localhistory/
+.codegraph/
 
 # VS Code — keep project config, ignore personal settings
 .vscode/*
@@ -155,20 +156,23 @@ __pycache__/
 # ============================================================
 # Playwright / Testing
 # ============================================================
+coverage/
 test-results/
 playwright-report/
+tests/reports/
+output/playwright/
 /reports/
 blob-report/
 
 # ============================================================
 # Docker / Runtime Data
 # ============================================================
-# Bind mounts created by build/docker-compose.yml on the deployment host
-build/pgdata/
-build/uploads/
+# Local Postgres data volumes
+/staging/pgdata
 
 # Runtime file uploads (generated, not source)
-src/backend/API/uploads/
+/staging/uploads
+src/backend/Hosts/Api/uploads/
 
 # ============================================================
 # Binary Documents
@@ -191,18 +195,18 @@ logs/
 # ============================================================
 # Project-Specific
 # ============================================================
-# npm lockfiles — the frontend workspace uses pnpm.
-# Exception: the repo ROOT uses npm for the commit-hook toolchain
-# (husky + lint-staged + prettier), so its lockfile IS committed to keep
-# everyone's pre-commit hook reproducible.
+# npm lockfiles — project uses pnpm
 package-lock.json
-!/package-lock.json
-
-# dotnet CLI first-run sentinels (created when DOTNET_CLI_HOME points here)
-.dotnet/
 
 # Temporary scratch folders
 temp/
 src/frontend/temp/
+.sonarqube/
 
 .playwright-mcp/
+.playwright-cli/
+
+# Mutation testing output (Stryker.NET and StrykerJS)
+StrykerOutput/
+src/frontend/reports/mutation/
+src/frontend/.stryker-tmp/

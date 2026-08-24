@@ -1,1 +1,1 @@
-export { default as AppFeedbackHub } from "./AppFeedbackHub.vue";
+export { default as NieAppFeedbackHub } from "./NieAppFeedbackHub.vue";

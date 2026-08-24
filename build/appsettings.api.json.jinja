@@ -1,0 +1,6 @@
+[% set source %][% include "build/appsettings.api.json" %][% endset %]
+[[ source
+  | replace("application", project_name)
+  | replace("Application", project_name)
+  | replace("MYAPP", project_name)
+-]]

@@ -1,0 +1,29 @@
+{{- range $name, $workload := .Values.workloads }}
+{{- $serviceName := include "application.serviceName" (list $ $name) }}
+{{- $isBlueGreen := and $.Values.rollouts.enabled (eq $workload.strategy "BlueGreen") }}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ $serviceName }}
+spec:
+  minReplicas: {{ $workload.hpa.minReplicas }}
+  maxReplicas: {{ $workload.hpa.maxReplicas }}
+  scaleTargetRef:
+    apiVersion: {{ $isBlueGreen | ternary "argoproj.io/v1alpha1" "apps/v1" }}
+    kind: {{ $isBlueGreen | ternary "Rollout" "Deployment" }}
+    name: {{ $serviceName }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ $workload.hpa.cpuUtilization }}
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: {{ $workload.hpa.memoryUtilization }}
+---
+{{- end }}

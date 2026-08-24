@@ -1,0 +1,7 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<!-- Additional settings specific to Domain library -->
+	</PropertyGroup>
+
+</Project>

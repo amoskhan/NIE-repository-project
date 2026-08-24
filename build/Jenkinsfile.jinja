@@ -1,0 +1,5 @@
+[% set source %][% include "build/Jenkinsfile" %][% endset %]
+[[ source
+  | replace("APP_NAME = 'application'", "APP_NAME = '" ~ project_name ~ "'")
+  | replace("NIE/nie-template.git", "NIE/" ~ project_name ~ ".git")
+-]]

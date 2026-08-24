@@ -1,0 +1,15 @@
+[
+  {
+    "Name": "All Startup",
+    "Projects": [
+      {
+        "Path": "Hosts\\Auth\\Auth.csproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "Hosts\\Api\\Api.csproj",
+        "Action": "Start"
+      }
+    ]
+  }
+]

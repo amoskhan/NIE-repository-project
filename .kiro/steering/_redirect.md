@@ -1,3 +1,3 @@
-# Kiro Steering — App Template
+# Kiro Steering — NIE Template
 
-Steering content lives in [`.ai/`](../../.ai/) (the unified instruction folder). Start at [`.ai/tool-routes/kiro.md`](../../.ai/tool-routes/kiro.md).
+Follow `AGENTS.md` and the Markdown contract indexed by `.ai/README.md`. Use `.ai/WORKFLOW.md` for implementation, canonical comparison, and independent verification. There are no numbered tasks or custom governance scripts.

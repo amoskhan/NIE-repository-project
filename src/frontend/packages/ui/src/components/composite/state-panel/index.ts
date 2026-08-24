@@ -1,2 +1,2 @@
-export { default as AppStatePanel } from "./AppStatePanel.vue";
-export type { StatePanelVariant } from "./AppStatePanel.vue";
+export { default as NieStatePanel } from "./NieStatePanel.vue";
+export type { StatePanelVariant } from "./NieStatePanel.vue";

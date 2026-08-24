@@ -1,0 +1,67 @@
+
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="color-scheme" content="light">
+    <meta name="supported-color-schemes" content="light">
+    <title>{AppName}</title>
+    <style>
+        @media only screen and (max-width: 660px) {
+            .email-shell { width: 100% !important; }
+            .email-gutter { padding-right: 20px !important; padding-left: 20px !important; }
+            .email-header-copy { display: none !important; }
+            .email-content { padding: 28px 24px !important; }
+        }
+    </style>
+</head>
+<body style="margin:0;padding:0;background:#f2f4f7;color:#172033;font-family:Arial,'Helvetica Neue',Helvetica,sans-serif;-webkit-font-smoothing:antialiased;">
+    <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">
+        An application workflow notification from {AppName}.
+    </div>
+
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;background:#f2f4f7;">
+        <tr>
+            <td class="email-gutter" align="center" style="padding:32px 16px;">
+                <table class="email-shell" role="presentation" width="640" cellpadding="0" cellspacing="0" border="0" style="width:640px;max-width:640px;background:#ffffff;border:1px solid #dfe4eb;border-radius:10px;">
+                    <tr>
+                        <td style="height:4px;background:#0055a5;border-radius:10px 10px 0 0;font-size:0;line-height:0;">&nbsp;</td>
+                    </tr>
+                    <tr>
+                        <td style="padding:24px 32px;border-bottom:1px solid #e5e9ef;">
+                            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                                <tr>
+                                    <td align="left" valign="middle">
+                                        <img src="cid:nie-template-nie-logo" width="210" alt="National Institute of Education and Nanyang Technological University Singapore" style="display:block;width:210px;max-width:100%;height:auto;border:0;outline:none;text-decoration:none;">
+                                    </td>
+                                    <td class="email-header-copy" align="right" valign="middle" style="padding-left:20px;">
+                                        <div style="color:#101828;font-size:16px;font-weight:700;line-height:22px;">NIE Template</div>
+                                        <div style="margin-top:2px;color:#667085;font-size:12px;line-height:18px;">Security workflow notification</div>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="email-content" style="padding:36px 40px 32px;color:#344054;font-size:15px;line-height:24px;word-break:break-word;">
+                            {Content}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding:22px 32px;border-top:1px solid #e5e9ef;background:#f8fafc;border-radius:0 0 10px 10px;">
+                            <p style="margin:0;color:#667085;font-size:12px;line-height:18px;">
+                                This operational notification was sent by <strong style="color:#475467;">{AppName}</strong> because you are part of the relevant application workflow.
+                            </p>
+                            <p style="margin:8px 0 0;color:#98a2b3;font-size:11px;line-height:17px;">
+                                This mailbox is not monitored. Sign in to NIE Template to review or respond. &copy; {Year} National Institute of Education, Nanyang Technological University.
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

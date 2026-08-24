@@ -1,0 +1,202 @@
+pipeline {
+    agent any
+
+    options {
+        disableConcurrentBuilds()
+        timestamps()
+        timeout(time: 120, unit: 'MINUTES')
+    }
+
+    parameters {
+        string(name: 'BRANCH_NAME', defaultValue: 'main', description: 'Git branch or ref to release')
+        choice(name: 'ENVIRONMENT', choices: ['dev', 'stg', 'prd'], description: 'Target AWS environment')
+        string(name: 'SOURCE_BUCKET', defaultValue: '', description: 'CodePipeline S3 source bucket')
+        string(name: 'SOURCE_OBJECT_KEY', defaultValue: '', description: 'Optional source object key override')
+        string(name: 'PIPELINE_NAME', defaultValue: '', description: 'Optional CodePipeline name override')
+        string(name: 'AWS_PROFILE', defaultValue: '', description: 'Optional AWS CLI profile on the Jenkins agent')
+    }
+
+    environment {
+        APP_NAME = 'application'
+        AWS_REGION = 'ap-southeast-1'
+        GIT_REPO_URL = 'https://niegithub.nie.edu.sg/NIE/nie-template.git'
+        GIT_CREDENTIAL = 'aygit-classic'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                script {
+                    checkout([
+                        $class: 'GitSCM',
+                        branches: [ [name: params.BRANCH_NAME] ],
+                        extensions: [
+                            [$class: 'CloneOption', depth: 0, shallow: false, noTags: false]
+                        ],
+                        userRemoteConfigs: [ [
+                            url: env.GIT_REPO_URL,
+                            credentialsId: env.GIT_CREDENTIAL
+                        ] ]
+                    ])
+                    env.SOURCE_COMMIT = sh(
+                        script: 'git rev-parse HEAD',
+                        returnStdout: true
+                    ).trim()
+                    echo "Checked out immutable source commit: ${env.SOURCE_COMMIT}"
+                }
+            }
+        }
+
+        stage('Validate Deployment Identity') {
+            steps {
+                sh '''
+                    set -eu
+                    test -f "deploy/helm/$APP_NAME/Chart.yaml"
+                    if [ "$APP_NAME" = "application" ]; then
+                        test -f "deploy/pipeline/Start-ApplicationRelease.ps1"
+                    else
+                        test -f "deploy/pipeline/Start-${APP_NAME}Release.ps1"
+                        if [ -f "deploy/pipeline/Start-ApplicationRelease.ps1" ]; then
+                            echo "Legacy generic release script must be reconciled before deployment." >&2
+                            exit 1
+                        fi
+                        if [ -d "deploy/helm/application" ] &&
+                           find "deploy/helm/application" -type f -print -quit | grep -q .; then
+                            echo "Legacy generic Helm chart must be reconciled before deployment." >&2
+                            exit 1
+                        fi
+                    fi
+                '''
+            }
+        }
+
+        stage('Standard Quality Gates') {
+            parallel {
+                stage('Frontend') {
+                    steps {
+                        sh 'corepack pnpm --dir src/frontend install --frozen-lockfile'
+                        sh 'corepack pnpm --dir src/frontend audit --prod'
+                        sh 'corepack pnpm --dir src/frontend lint'
+                        sh 'corepack pnpm --dir src/frontend type-check'
+                        sh 'corepack pnpm --dir src/frontend --filter main test'
+                        sh 'corepack pnpm --dir src/frontend build'
+                    }
+                }
+                stage('Backend') {
+                    steps {
+                        sh 'dotnet restore src/backend/Backend.sln'
+                        sh 'dotnet package list --project src/backend/Backend.sln --vulnerable --include-transitive --no-restore'
+                        sh 'dotnet format src/backend/Backend.sln --verify-no-changes --severity warn --no-restore'
+                        sh 'dotnet build src/backend/Backend.sln -c Release -warnaserror --no-restore --nologo'
+                        sh 'dotnet test --solution src/backend/Backend.sln -c Release --no-build --no-restore'
+                    }
+                }
+            }
+        }
+
+        stage('Package Exact Source') {
+            steps {
+                script {
+                    if (!params.SOURCE_BUCKET?.trim()) {
+                        error('SOURCE_BUCKET is required.')
+                    }
+
+                    env.RELEASE_SOURCE_BUCKET = params.SOURCE_BUCKET.trim()
+                    env.RELEASE_SOURCE_OBJECT_KEY = params.SOURCE_OBJECT_KEY?.trim()
+                        ? params.SOURCE_OBJECT_KEY.trim()
+                        : "${env.APP_NAME}/${params.ENVIRONMENT}/source.zip"
+                    env.RELEASE_PIPELINE_NAME = params.PIPELINE_NAME?.trim()
+                        ? params.PIPELINE_NAME.trim()
+                        : "${env.APP_NAME}-${params.ENVIRONMENT}-pipeline"
+                    env.RELEASE_AWS_PROFILE = params.AWS_PROFILE?.trim() ?: ''
+
+                    sh '''
+                        set -eu
+                        rm -f source.zip
+                        git archive --format=zip --output=source.zip "$SOURCE_COMMIT"
+                        test -s source.zip
+                    '''
+                }
+            }
+        }
+
+        stage('Start AWS Release') {
+            steps {
+                script {
+                    sh '''
+                        set -eu
+                        if [ -n "$RELEASE_AWS_PROFILE" ]; then
+                            aws s3 cp source.zip \
+                                "s3://$RELEASE_SOURCE_BUCKET/$RELEASE_SOURCE_OBJECT_KEY" \
+                                --region "$AWS_REGION" --profile "$RELEASE_AWS_PROFILE" --no-cli-pager
+                        else
+                            aws s3 cp source.zip \
+                                "s3://$RELEASE_SOURCE_BUCKET/$RELEASE_SOURCE_OBJECT_KEY" \
+                                --region "$AWS_REGION" --no-cli-pager
+                        fi
+                    '''
+
+                    env.pipelineExecutionId = sh(
+                        script: '''
+                            set -eu
+                            if [ -n "$RELEASE_AWS_PROFILE" ]; then
+                                aws codepipeline start-pipeline-execution \
+                                    --name "$RELEASE_PIPELINE_NAME" \
+                                    --region "$AWS_REGION" --profile "$RELEASE_AWS_PROFILE" \
+                                    --query pipelineExecutionId --output text --no-cli-pager
+                            else
+                                aws codepipeline start-pipeline-execution \
+                                    --name "$RELEASE_PIPELINE_NAME" \
+                                    --region "$AWS_REGION" \
+                                    --query pipelineExecutionId --output text --no-cli-pager
+                            fi
+                        ''',
+                        returnStdout: true
+                    ).trim()
+                    echo "Started CodePipeline execution: ${env.pipelineExecutionId}"
+                }
+            }
+        }
+
+        stage('Wait for AWS Release') {
+            steps {
+                script {
+                    timeout(time: 90, unit: 'MINUTES') {
+                        waitUntil(initialRecurrencePeriod: 15000, quiet: true) {
+                            def status = sh(
+                                script: '''
+                                    set -eu
+                                    if [ -n "$RELEASE_AWS_PROFILE" ]; then
+                                        aws codepipeline get-pipeline-execution \
+                                            --pipeline-name "$RELEASE_PIPELINE_NAME" \
+                                            --pipeline-execution-id "$pipelineExecutionId" \
+                                            --region "$AWS_REGION" --profile "$RELEASE_AWS_PROFILE" \
+                                            --query pipelineExecution.status --output text --no-cli-pager
+                                    else
+                                        aws codepipeline get-pipeline-execution \
+                                            --pipeline-name "$RELEASE_PIPELINE_NAME" \
+                                            --pipeline-execution-id "$pipelineExecutionId" \
+                                            --region "$AWS_REGION" \
+                                            --query pipelineExecution.status --output text --no-cli-pager
+                                    fi
+                                ''',
+                                returnStdout: true
+                            ).trim()
+                            echo "CodePipeline status: ${status}"
+                            if (status in ['Failed', 'Stopped', 'Superseded']) {
+                                error("CodePipeline execution finished with status '${status}'.")
+                            }
+                            return status == 'Succeeded'
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            sh 'rm -f source.zip'
+        }
+    }
+}
