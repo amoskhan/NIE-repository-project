@@ -1,0 +1,113 @@
+# Requirements
+
+## Functional requirements
+
+### FR-001 - Protected product entry
+- Actor/context: Anonymous visitor, authenticated PE teacher, PE coordinator, student, or system administrator.
+- Trigger/precondition: A visitor opens a product route or returns after signing in.
+- Required behavior: The product sends unauthenticated visitors to the authentication experience, validates the requested return route, and returns an authenticated visitor to that permitted route or their dashboard. Protected content is not shown before session validation.
+- Validation/failure outcome: Invalid or forbidden deep links show the appropriate safe status and a permitted recovery route; expired sessions require sign-in again.
+- Acceptance criteria: A valid deep link returns to its original route after sign-in; an invalid external return target is rejected; a denied route is not rendered.
+
+### FR-002 - View class groups
+- Actor/context: PE teacher or PE coordinator within one institution.
+- Trigger/precondition: An authorised actor opens My Classes.
+- Required behavior: Show active class groups in the actor’s allowed scope with code, name, activity, term, lead teacher, student count, and status.
+- Validation/failure outcome: Invalid paging or filtering is rejected; no matching class groups shows an empty state without widening scope.
+- Acceptance criteria: Teachers see only class groups where they are lead teacher; coordinators see institution class groups; stable paging and sort are retained on retry.
+
+### FR-003 - Create class group
+- Actor/context: PE teacher or PE coordinator within one institution.
+- Trigger/precondition: The actor holds `physical-education.classes.manage` and opens Create class.
+- Required behavior: Create an active class group with a unique code within the institution and assign its lead teacher.
+- Validation/failure outcome: Required values, length limits, invalid term format, duplicate codes, and a lead teacher outside the institution are rejected without creating a record.
+- Acceptance criteria: A valid class appears in the permitted list; duplicate code returns a conflict; creation is audited.
+
+### FR-004 - View class roster
+- Actor/context: PE teacher or PE coordinator with access to a selected class group.
+- Trigger/precondition: The actor opens a class roster route for an active class group in scope.
+- Required behavior: Show only active enrollments with student display name and enrollment date; provide the Record observation action for each displayed student.
+- Validation/failure outcome: Unknown class groups return not found; an out-of-scope class returns forbidden; inactive enrollments are not offered for assessment.
+- Acceptance criteria: Every displayed student belongs to the selected class; direct access to another teacher’s class is denied and audited.
+
+### FR-005 - Record observation
+- Actor/context: PE teacher or PE coordinator with assessment-management access for the selected class group and active enrollment.
+- Trigger/precondition: The actor selects Record observation and supplies observation date, skill level, and observation note.
+- Required behavior: Persist one draft assessment tied to the active enrollment, selected class, assessed student, and actor.
+- Validation/failure outcome: Future dates, ratings outside one through five, notes outside 20 through 1,000 characters, mismatched enrollment/class/student, and stale class data are rejected.
+- Acceptance criteria: A valid assessment is saved as Draft and is visible only to permitted staff until feedback is published.
+
+### FR-006 - Generate and review feedback draft
+- Actor/context: PE teacher or PE coordinator with `physical-education.feedback.generate` for a Draft assessment in scope.
+- Trigger/precondition: The actor opens the feedback-review route and requests a draft using a non-empty idempotency key.
+- Required behavior: Send minimum-necessary pseudonymous observation context to the configured AI feedback service, save the returned proposed text as a PendingReview feedback draft, and allow the educator to replace or edit it.
+- Validation/failure outcome: A missing idempotency key, invalid assessment state, duplicate in-flight request, unavailable service, or unsuitable response returns an actionable problem and preserves the assessment and any existing editable text.
+- Acceptance criteria: The generated text is not visible to students; repeating the same idempotency key does not create another draft; manual editing remains available after a service failure.
+
+### FR-007 - Publish approved feedback
+- Actor/context: PE teacher or PE coordinator with `physical-education.feedback.publish` for an assessment in scope.
+- Trigger/precondition: A PendingReview feedback draft has non-empty educator-edited text and the actor selects Publish feedback.
+- Required behavior: Publish exactly the educator-approved text, record the publishing actor and time, and make the feedback available to the assessed student.
+- Validation/failure outcome: A stale revision, missing approved text, wrong draft state, or denied scope prevents publication and retains the latest authoritative review state.
+- Acceptance criteria: Published feedback has an immutable publication timestamp and is never replaced by later generated text; publication is audited.
+
+### FR-008 - Read and acknowledge personal feedback
+- Actor/context: Student with `physical-education.feedback.read.own` and `physical-education.feedback.acknowledge.own`.
+- Trigger/precondition: The student opens My Feedback and selects Acknowledge on an unacknowledged published item.
+- Required behavior: Show only that student’s published feedback, observation date, class title, skill level, and acknowledgement state; accept an optional 0–500 character reflection once.
+- Validation/failure outcome: A student cannot query staff-only or another student’s feedback; a repeat acknowledgement is idempotent and returns the recorded acknowledgement.
+- Acceptance criteria: An acknowledgement records student and time once; the item changes to Acknowledged; access and acknowledgement are audited.
+
+## Non-functional requirements
+
+### NFR-001 - Authorization and auditability
+- Actor/context: Every authenticated request and visible product region.
+- Trigger/precondition: A user navigates, reads, creates, generates, publishes, or acknowledges data.
+- Required behavior: Enforce exact access functions and institution/class/student scope server-side; audit successful mutations and access denials without storing credentials or unnecessary student data in audit details.
+- Validation/failure outcome: A missing access function or failed record-scope check returns a typed forbidden outcome and does not disclose record existence beyond the stated access outcome.
+- Acceptance criteria: Positive and negative authorization tests cover each conceptual actor and a cross-class/cross-student boundary.
+
+### NFR-002 - Privacy, retention, and accessibility
+- Actor/context: All product users and school data stewards.
+- Trigger/precondition: Educational records are displayed, transferred for draft generation, retained, or deleted.
+- Required behavior: Use minimum necessary personal data, pseudonymise the AI request, retain educational records for seven years after the academic year closes, and provide keyboard, label, focus, contrast, responsive, and screen-reader support.
+- Validation/failure outcome: Sensitive fields are not displayed outside permitted screens; a failed external draft request does not expose request content; inaccessible controls block release.
+- Acceptance criteria: The primary teacher and student workflows work at desktop and 390-pixel widths with keyboard-only operation and labelled controls.
+
+### NFR-003 - Reliability and recovery
+- Actor/context: Users performing a product workflow.
+- Trigger/precondition: A request, dependent service, or optimistic update fails.
+- Required behavior: Preserve entered values where safe, give a clear retry or manual-entry action, use declared concurrency controls, and never claim a write or publication completed before it is persisted.
+- Validation/failure outcome: Typed validation, conflict, throttling, unavailable, and server-error states identify the recovery action without exposing internals.
+- Acceptance criteria: A feedback-service outage permits manual feedback entry; a stale publication requires reload; a retry keeps the user’s observation inputs.
+
+## Business rules
+
+- BR-001: Every class group, enrollment, assessment, feedback draft, and acknowledgement belongs to exactly one institution.
+- BR-002: Teacher scope is classes where `leadTeacherId` equals the authenticated user; coordinator scope is all records in the authenticated user’s institution; student scope is records where `studentId` equals the authenticated user.
+- BR-003: Only Active enrollment may receive an assessment. Assessment state is Draft, FeedbackReady, or Published.
+- BR-004: Generated feedback is a staff-only draft. Only `educatorEditedText` is publishable.
+- BR-005: One assessment has at most one current feedback draft and one acknowledgement. Acknowledgement does not change published text.
+
+## Edge cases
+
+- A student becomes inactive after an assessment is drafted: staff may review the history but cannot publish until an active enrollment is restored or a coordinator resolves the record.
+- An AI draft request times out: retain staff-entered text and allow a new idempotency key or manual completion.
+- Two staff members publish simultaneously: only the matching current row version succeeds; the other receives a conflict and reloads.
+- A class has no active students: show the roster empty state and hide Record observation actions.
+
+## Requirement traceability
+
+| Requirement | Workflows | Operations | Screens |
+| --- | --- | --- | --- |
+| FR-001 | WF-001 | getDashboard | sign-in, dashboard |
+| FR-002 | WF-002 | listClassGroups | classes |
+| FR-003 | WF-002 | createClassGroup | classes |
+| FR-004 | WF-003 | getClassRoster | class-roster, assessment-form |
+| FR-005 | WF-003 | createAssessment | assessment-form |
+| FR-006 | WF-004 | getFeedbackReview, generateFeedbackDraft | feedback-review |
+| FR-007 | WF-005 | getFeedbackReview, publishFeedback | feedback-review |
+| FR-008 | WF-006 | listMyFeedback, acknowledgeFeedback | my-feedback |
+| NFR-001 | WF-001, WF-002, WF-003, WF-004, WF-005, WF-006 | all listed operations | all screens |
+| NFR-002 | WF-002, WF-003, WF-004, WF-005, WF-006 | all listed operations | classes, class-roster, assessment-form, feedback-review, my-feedback |
+| NFR-003 | WF-002, WF-003, WF-004, WF-005, WF-006 | all listed operations | classes, assessment-form, feedback-review, my-feedback |

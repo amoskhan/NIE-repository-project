@@ -1,0 +1,168 @@
+# Logical data model
+
+## Entity: `UserProfile`
+- Purpose: Identify an authenticated product participant for scope and display.
+- Ownership: Repository-owned access control, referenced by Aug1.
+- Keys: `id` primary key.
+- Foreign keys: `organisationId` targets the institution identity boundary.
+- Uniqueness: `id` is unique.
+- Enums: `participantType` is Teacher, Coordinator, Student, or Administrator.
+- Concurrency: none.
+- Sensitive data: name and institutional affiliation.
+- Lifecycle: Active to Inactive.
+- Indexes: query `organisationId, participantType, status`.
+- Retention: repository identity retention policy.
+- Delete behavior: restrict while referenced by product records.
+- Audit: access-control audit owns identity changes.
+| Field | Type | Required | Nullable | Default | Constraints | Sensitive | Description |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| id | UUID | yes | no | supplied by identity | PK, immutable UUIDv7 | internal | Participant identity. |
+| organisationId | UUID | yes | no | supplied by identity | institution scope identifier | internal | Institution boundary. |
+| displayName | string | yes | no | none | 1–120 characters | personal | Name shown to permitted users. |
+| participantType | enum | yes | no | none | Teacher, Coordinator, Student, Administrator | internal | Conceptual participant classification. |
+| status | enum | yes | no | Active | Active, Inactive | internal | Identity availability state. |
+
+## Entity: `ClassGroup`
+- Purpose: Represent one PE teaching group for an academic term.
+- Ownership: Physical Education teaching team.
+- Keys: `id` primary key; `code` alternate key within `organisationId`.
+- Foreign keys: `organisationId` targets the institution boundary; `leadTeacherId` targets `UserProfile.id`.
+- Uniqueness: `organisationId, code` is unique.
+- Enums: `status` is Active or Archived.
+- Concurrency: `rowVersion` uses optimistic concurrency.
+- Sensitive data: internal teaching allocation.
+- Lifecycle: Active to Archived.
+- Indexes: unique `organisationId, code`; query `organisationId, leadTeacherId, status, academicTerm`.
+- Retention: seven years after academic year closes.
+- Delete behavior: restrict while enrollments or assessments exist.
+- Audit: creation, update, archive, and denied access.
+| Field | Type | Required | Nullable | Default | Constraints | Sensitive | Description |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| id | UUID | yes | no | generated | PK, immutable UUIDv7 | internal | Class group identity. |
+| organisationId | UUID | yes | no | context supplied | institution scope identifier | internal | Owning institution. |
+| code | string | yes | no | none | 2–20 uppercase letters, digits, or hyphens; unique with organisationId | internal | Human-recognisable class code. |
+| title | string | yes | no | none | 1–120 characters | internal | Class display name. |
+| activity | string | yes | no | none | 1–80 characters | internal | PE activity or unit. |
+| academicTerm | string | yes | no | none | `YYYY-TN`, N is 1–4 | internal | Term identifier. |
+| leadTeacherId | UUID | yes | no | actor id | FK UserProfile.id | personal | Teacher accountable for the class. |
+| status | enum | yes | no | Active | Active, Archived | internal | Class lifecycle state. |
+| createdAt | timestamp | yes | no | generated UTC | immutable after creation | internal | Creation time. |
+| updatedAt | timestamp | yes | no | generated UTC | updated on mutation | internal | Last update time. |
+| rowVersion | integer | yes | no | generated | positive, incremented on mutation | internal | Optimistic concurrency token. |
+
+## Entity: `Enrollment`
+- Purpose: Connect one student to one class group.
+- Ownership: Physical Education teaching team.
+- Keys: `id` primary key; `classGroupId, studentId` alternate key.
+- Foreign keys: `classGroupId` targets `ClassGroup.id`; `studentId` targets `UserProfile.id`.
+- Uniqueness: `classGroupId, studentId` is unique.
+- Enums: `status` is Active or Inactive.
+- Concurrency: none.
+- Sensitive data: student participation.
+- Lifecycle: Active to Inactive.
+- Indexes: unique `classGroupId, studentId`; query `studentId, status`.
+- Retention: seven years after academic year closes.
+- Delete behavior: restrict while assessments exist.
+- Audit: activation and inactivation.
+| Field | Type | Required | Nullable | Default | Constraints | Sensitive | Description |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| id | UUID | yes | no | generated | PK, immutable UUIDv7 | internal | Enrollment identity. |
+| classGroupId | UUID | yes | no | none | FK ClassGroup.id | internal | Enrolled class group. |
+| studentId | UUID | yes | no | none | FK UserProfile.id; participantType Student | personal | Enrolled student. |
+| status | enum | yes | no | Active | Active, Inactive | internal | Enrollment availability. |
+| enrolledAt | timestamp | yes | no | generated UTC | immutable after creation | internal | Enrollment start time. |
+
+## Entity: `Assessment`
+- Purpose: Persist one educator observation of one active student enrollment.
+- Ownership: Physical Education teaching team.
+- Keys: `id` primary key.
+- Foreign keys: `organisationId` targets institution boundary; `classGroupId` targets `ClassGroup.id`; `enrollmentId` targets `Enrollment.id`; `studentId` targets `UserProfile.id`; `assessedByUserId` targets `UserProfile.id`.
+- Uniqueness: none.
+- Enums: `status` is Draft, FeedbackReady, or Published.
+- Concurrency: `rowVersion` uses optimistic concurrency.
+- Sensitive data: student educational observation.
+- Lifecycle: Draft to FeedbackReady to Published.
+- Indexes: query `organisationId, classGroupId, studentId, assessmentDate`; query `assessedByUserId, status`.
+- Retention: seven years after academic year closes.
+- Delete behavior: restrict after feedback publication; delete draft only before a feedback draft exists.
+- Audit: creation, feedback readiness, publication, and denied access.
+| Field | Type | Required | Nullable | Default | Constraints | Sensitive | Description |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| id | UUID | yes | no | generated | PK, immutable UUIDv7 | internal | Assessment identity. |
+| organisationId | UUID | yes | no | context supplied | institution scope identifier | internal | Owning institution. |
+| classGroupId | UUID | yes | no | none | FK ClassGroup.id | internal | Observed class group. |
+| enrollmentId | UUID | yes | no | none | FK Enrollment.id; must match classGroupId and studentId | internal | Active enrollment assessed. |
+| studentId | UUID | yes | no | derived from enrollment | FK UserProfile.id; must match enrollmentId | personal | Assessed student. |
+| assessmentDate | date | yes | no | current local date | not future; within class academic term | personal | Observation date. |
+| skillLevel | integer | yes | no | none | inclusive range 1–5 | educational | Teacher-selected performance level. |
+| observationNote | string | yes | no | none | 20–1,000 characters | educational | Factual teacher observation. |
+| assessedByUserId | UUID | yes | no | actor id | FK UserProfile.id; teacher or coordinator in scope | personal | Recording educator. |
+| status | enum | yes | no | Draft | Draft, FeedbackReady, Published | internal | Assessment lifecycle state. |
+| createdAt | timestamp | yes | no | generated UTC | immutable after creation | internal | Creation time. |
+| updatedAt | timestamp | yes | no | generated UTC | updated on mutation | internal | Last update time. |
+| rowVersion | integer | yes | no | generated | positive, incremented on mutation | internal | Optimistic concurrency token. |
+
+## Entity: `FeedbackDraft`
+- Purpose: Hold the generated and educator-approved feedback for one assessment.
+- Ownership: Physical Education teaching team.
+- Keys: `id` primary key; `assessmentId` alternate key.
+- Foreign keys: `assessmentId` targets `Assessment.id`; `publishedByUserId` targets `UserProfile.id`.
+- Uniqueness: `assessmentId` is unique.
+- Enums: `generationStatus` is NotRequested, PendingReview, Failed, or Published.
+- Concurrency: `rowVersion` uses optimistic concurrency.
+- Sensitive data: student educational feedback and generated wording.
+- Lifecycle: NotRequested to PendingReview or Failed; PendingReview to Published.
+- Indexes: unique `assessmentId`; query `generationStatus, publishedAt`.
+- Retention: seven years after academic year closes.
+- Delete behavior: restrict after publication; delete draft only with un-published assessment deletion.
+- Audit: generation request, generation result, edit, publication, and failed publication.
+| Field | Type | Required | Nullable | Default | Constraints | Sensitive | Description |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| id | UUID | yes | no | generated | PK, immutable UUIDv7 | internal | Feedback draft identity. |
+| assessmentId | UUID | yes | no | none | FK Assessment.id; unique | internal | Associated assessment. |
+| generationStatus | enum | yes | no | NotRequested | NotRequested, PendingReview, Failed, Published | internal | Draft lifecycle state. |
+| generatedText | string | no | yes | none | 1–2,000 characters when present | educational | Proposed AI feedback. |
+| educatorEditedText | string | no | yes | none | 1–2,000 characters when present; required to publish | educational | Educator-approved editable text. |
+| publishedText | string | no | yes | none | 1–2,000 characters when published; immutable once set | educational | Student-visible approved feedback. |
+| generatedAt | timestamp | no | yes | none | UTC when generation succeeds | internal | Generation completion time. |
+| publishedAt | timestamp | no | yes | none | UTC when published | internal | Publication time. |
+| publishedByUserId | UUID | no | yes | none | FK UserProfile.id when published | personal | Publishing educator. |
+| rowVersion | integer | yes | no | generated | positive, incremented on mutation | internal | Optimistic concurrency token. |
+
+## Entity: `FeedbackAcknowledgement`
+- Purpose: Record a student’s acknowledgement of published feedback.
+- Ownership: Student and Physical Education teaching team.
+- Keys: `id` primary key; `feedbackDraftId` alternate key.
+- Foreign keys: `feedbackDraftId` targets `FeedbackDraft.id`; `studentId` targets `UserProfile.id`.
+- Uniqueness: `feedbackDraftId` is unique.
+- Enums: none.
+- Concurrency: none.
+- Sensitive data: learner reflection.
+- Lifecycle: Created once; immutable.
+- Indexes: unique `feedbackDraftId`; query `studentId, acknowledgedAt`.
+- Retention: seven years after academic year closes.
+- Delete behavior: restrict while feedback is retained.
+- Audit: acknowledgement creation and denied acknowledgement attempts.
+| Field | Type | Required | Nullable | Default | Constraints | Sensitive | Description |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| id | UUID | yes | no | generated | PK, immutable UUIDv7 | internal | Acknowledgement identity. |
+| feedbackDraftId | UUID | yes | no | none | FK FeedbackDraft.id; unique; must be Published | internal | Acknowledged feedback. |
+| studentId | UUID | yes | no | actor id | FK UserProfile.id; must match assessment student | personal | Acknowledging student. |
+| acknowledgedAt | timestamp | yes | no | generated UTC | immutable after creation | personal | Acknowledgement time. |
+| reflection | string | no | yes | none | 0–500 characters | educational | Optional student reflection. |
+
+## Relationships and delete behavior
+
+`ClassGroup` has many `Enrollment` and `Assessment`; `Enrollment` has many `Assessment`; `Assessment` has one `FeedbackDraft`; `FeedbackDraft` has zero or one `FeedbackAcknowledgement`. Archived classes and inactive enrollments preserve history. Published feedback and acknowledgements are restricted from deletion.
+
+## Indexes and query patterns
+
+Class lists filter institution, lead teacher, status, and term. Rosters filter class and active enrollment. Staff assessment/review queries filter institution, class, student, status, and observation date. Student feedback queries filter `studentId` and published state, newest publication first.
+
+## Lifecycle and state transitions
+
+ClassGroup: Active → Archived. Enrollment: Active → Inactive. Assessment: Draft → FeedbackReady → Published. FeedbackDraft: NotRequested → PendingReview, NotRequested → Failed, Failed → PendingReview, PendingReview → Published. FeedbackAcknowledgement is created only for Published feedback and has no transition.
+
+## Retention, privacy, and audit
+
+Educational records are retained seven years after their academic year closes, then are disposed under the school data steward’s approved schedule. AI requests exclude student names, identifiers, and free-form historical records; only the current pseudonymous observation context is transferred. Create, generation, edit, publication, acknowledgement, and denial events are audit-recorded with actor, target, timestamp, outcome, and correlation identifier.

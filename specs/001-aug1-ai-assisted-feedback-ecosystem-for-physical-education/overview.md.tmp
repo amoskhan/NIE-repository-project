@@ -1,0 +1,45 @@
+# Aug1 AI-Assisted Feedback Ecosystem for Physical Education
+
+## Purpose and outcomes
+
+Aug1 helps Physical Education teachers turn structured observations into timely, age-appropriate feedback. A teacher records what a student demonstrated, asks for a feedback draft, reviews it, and publishes the approved message. Students see only their own published feedback and can acknowledge it with a short reflection.
+
+The product makes educator judgement decisive: generated wording is a draft, never an automatic student-facing decision. It reduces time spent composing feedback while preserving a clear record of what was observed, what was published, and what the learner acknowledged.
+
+## In scope
+
+- Authenticated staff and student entry, including protected deep-link return after sign-in.
+- Teacher-owned PE class groups and their enrolled student rosters.
+- Structured skill observation for one enrolled student at a time.
+- Generation, review, editing, publication, and acknowledgement of feedback.
+- Teacher, coordinator, student, and administrator access boundaries; audit events; institutional scope.
+- Product navigation for Dashboard, My Classes, and My Feedback, plus preserved template-owned administration destinations.
+
+## Out of scope
+
+- Automated grading, disciplinary decisions, attendance, video analysis, biometric data, health records, parent access, and student-to-student visibility.
+- Bulk assessment import, roster synchronisation, external learning-management-system integration, multilingual authoring, and automated notification delivery.
+- Replacing the repository-owned Access Control or Audit Logs operational capabilities.
+
+## Actors and stakeholders
+
+- PE teachers create classes, observe students assigned to those classes, request drafts, edit, and publish feedback.
+- PE coordinators oversee all product records in their institution and may perform the same feedback actions when supporting a class.
+- Students read and acknowledge only feedback published to them.
+- System administrators maintain access and audit operations; they do not receive additional educational-data rights solely from their role.
+- The Aug1 Physical Education Product Team owns product decisions; school data stewards own student-data retention decisions.
+
+## Assumptions and dependencies
+
+- The institution authenticates people and supplies stable user identities and access functions through the repository-owned authentication and authorization capabilities.
+- A configured AI feedback service accepts only pseudonymous, minimum-necessary observation context and returns a proposed text; its failure never prevents a teacher from entering or editing feedback manually.
+- Teachers are responsible for factual accuracy and suitability before publication. A student must be actively enrolled in the selected class before an assessment can be recorded.
+- Records are institution-scoped. Teachers are limited to their assigned classes; coordinators may access every class in their institution; students are limited to their own published feedback.
+
+## Success measures
+
+- In usability testing, at least 90% of PE teachers can record an observation, obtain a draft, review it, and publish feedback in under five minutes without assistance.
+- Every published feedback item is traceable to one assessment, author, publication time, and approved text.
+- A student can open their feedback and submit an acknowledgement in under two minutes on a 390-pixel-wide phone or desktop browser.
+- 95% of feedback-draft requests complete or return an actionable retry/manual-entry outcome within 20 seconds.
+- Access testing demonstrates that a teacher cannot read another teacher’s class data and a student cannot read another student’s feedback.
