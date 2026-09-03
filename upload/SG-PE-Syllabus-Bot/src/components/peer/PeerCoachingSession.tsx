@@ -1,0 +1,1246 @@
+import React, { useState, useRef, useEffect } from 'react';
+import {
+  getAllCuesForSkill,
+  getCoreCuesForSkill,
+  PeerSyllabusCue,
+} from '../../data/peerSyllabusCues';
+import { speechService } from '../../services/speechService';
+import {
+  queuePairSubmission,
+  PairSubmissionRecord,
+  PeerCueResult,
+  getDB,
+  getOrCreatePairClaimToken,
+} from '../../services/offline/offlineStorage';
+import { backupSubmissionToSupabase } from '../../services/cloudSyncService';
+import { uploadGuestVideo, uploadPeerSessionToTeacher } from '../../services/studentService';
+import { poseDetectionService } from '../../services/vision/poseDetectionService';
+import VideoAnalysisPlayer from '../video/VideoAnalysisPlayer';
+
+export interface CompletedPeerSession {
+  pairNumber: number;
+  lessonId: string;
+  skillName: string;
+  pairPhoto: string;
+  appleVideoBlob?: Blob;
+  applePoseFrames: string[];
+  appleCues: Record<string, boolean>;
+  bananaVideoBlob?: Blob;
+  bananaPoseFrames: string[];
+  bananaCues: Record<string, boolean>;
+}
+
+interface PeerCoachingSessionProps {
+  pairNumber: number;
+  lessonId: string;
+  skillName: string;
+  pairPhoto: string;
+  teacherId?: string; // From QR — used to upload videos to teacher's Supabase bucket
+  onSessionComplete: () => void;
+  onSendToCoachBot?: (data: CompletedPeerSession) => void;
+  onExit: () => void;
+}
+
+type Step =
+  | 'APPLE_INTRO'
+  | 'APPLE_RECORDING'
+  | 'APPLE_REVIEW'
+  | 'SWAP_PROMPT'
+  | 'BANANA_RECORDING'
+  | 'BANANA_REVIEW'
+  | 'SESSION_COMPLETED';
+
+export const PeerCoachingSession: React.FC<PeerCoachingSessionProps> = ({
+  pairNumber,
+  lessonId,
+  skillName,
+  pairPhoto,
+  teacherId,
+  onSessionComplete,
+  onSendToCoachBot,
+  onExit,
+}) => {
+  const [step, setStep] = useState<Step>('APPLE_INTRO');
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordSeconds, setRecordSeconds] = useState(0);
+  const [activeStream, setActiveStream] = useState<MediaStream | null>(null);
+
+  // Turn 1 Data (Banana performs, Apple records)
+  const [bananaVideoUrl, setBananaVideoUrl] = useState<string | null>(null);
+  const [bananaVideoBlob, setBananaVideoBlob] = useState<Blob | null>(null);
+  const [bananaCues, setBananaCues] = useState<Record<string, boolean>>({});
+  const [bananaPoseFrames, setBananaPoseFrames] = useState<string[]>([]);
+
+  // Turn 2 Data (Apple performs, Banana records)
+  const [appleVideoUrl, setAppleVideoUrl] = useState<string | null>(null);
+  const [appleVideoBlob, setAppleVideoBlob] = useState<Blob | null>(null);
+  const [appleCues, setAppleCues] = useState<Record<string, boolean>>({});
+  const [applePoseFrames, setApplePoseFrames] = useState<string[]>([]);
+
+  const [isSaving, setIsSaving] = useState(false);
+  const [isOfflineSaved, setIsOfflineSaved] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [showFullChecklist, setShowFullChecklist] = useState(false);
+  // Per-video cloud save state — tracks "Save to Teacher" button independent of full peer-assessment flow
+  const [bananaSaveState, setBananaSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [appleSaveState, setAppleSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+
+  const videoPreviewRef = useRef<HTMLVideoElement>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const recordedChunksRef = useRef<Blob[]>([]);
+  const uploadInputBananaRef = useRef<HTMLInputElement>(null); // file upload for Banana performer
+  const uploadInputAppleRef = useRef<HTMLInputElement>(null);  // file upload for Apple performer
+  const allCues: PeerSyllabusCue[] = getAllCuesForSkill(skillName);
+  const coreCues: PeerSyllabusCue[] = getCoreCuesForSkill(skillName);
+  const displayedCues = showFullChecklist ? allCues : coreCues;
+
+  // Voice Guidance on Step Changes
+  useEffect(() => {
+    switch (step) {
+      case 'APPLE_INTRO':
+        speechService.speak(`Apple, hold the iPad. Banana, stand back and get ready for ${skillName}!`);
+        break;
+      case 'APPLE_REVIEW':
+        speechService.speak('Apple, watch the replay. Did Banana follow the PE syllabus cues?');
+        break;
+      case 'SWAP_PROMPT':
+        speechService.speak('Great job, Apple! Now swap roles. Banana grab the iPad, Apple get ready to perform!');
+        break;
+      case 'BANANA_REVIEW':
+        speechService.speak('Banana, watch the replay. Check off Apple cues!');
+        break;
+      case 'SESSION_COMPLETED':
+        speechService.speak('Awesome teamwork! Both partners are done. Your practice has been saved for the teacher!');
+        break;
+    }
+  }, [step, skillName]);
+
+  const attachStreamToVideo = (videoEl: HTMLVideoElement | null, stream: MediaStream | null) => {
+    if (!videoEl || !stream) return;
+    if (videoEl.srcObject !== stream) {
+      videoEl.srcObject = stream;
+      videoEl.setAttribute('playsinline', 'true');
+      videoEl.setAttribute('webkit-playsinline', 'true');
+      videoEl.muted = true;
+      videoEl.play().catch(console.warn);
+    }
+  };
+
+  // Keep stream attached whenever activeStream or step changes
+  useEffect(() => {
+    attachStreamToVideo(videoPreviewRef.current, activeStream);
+  }, [activeStream, step]);
+
+  // Start Camera Stream for Recording Steps - never tear down when transitioning between intro & recording
+  const isApplePhase = step === 'APPLE_INTRO' || step === 'APPLE_RECORDING';
+  const isBananaPhase = step === 'SWAP_PROMPT' || step === 'BANANA_RECORDING';
+
+  useEffect(() => {
+    if (isApplePhase || isBananaPhase) {
+      startCamera();
+    } else {
+      stopCamera();
+    }
+  }, [isApplePhase, isBananaPhase]);
+
+  useEffect(() => {
+    return () => {
+      stopCamera();
+    };
+  }, []);
+
+  const startCamera = async () => {
+    try {
+      if (activeStream && activeStream.active && activeStream.getVideoTracks().some((t) => t.readyState === 'live')) {
+        attachStreamToVideo(videoPreviewRef.current, activeStream);
+        return;
+      }
+
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        console.warn('getUserMedia not available (check HTTPS on iOS)');
+        return;
+      }
+
+      let stream: MediaStream;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'environment' },
+          audio: false,
+        });
+      } catch {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: true,
+          audio: false,
+        });
+      }
+
+      setActiveStream(stream);
+      attachStreamToVideo(videoPreviewRef.current, stream);
+    } catch (e) {
+      console.warn('Camera stream error:', e);
+    }
+  };
+
+  const stopCamera = () => {
+    if (activeStream) {
+      activeStream.getTracks().forEach((t) => t.stop());
+      setActiveStream(null);
+    }
+  };
+
+  const currentPerformerRef = useRef<'Banana' | 'Apple'>('Banana');
+  const timerRef = useRef<any>(null);
+  const snapIntervalRef = useRef<any>(null);
+
+  // Capture real, live body frames directly from the active camera element in the DOM
+  const captureLivePoseSnapshot = async (performer: 'Banana' | 'Apple') => {
+    if (!videoPreviewRef.current) return;
+    try {
+      const video = videoPreviewRef.current;
+      if (!video.videoWidth || !video.videoHeight) return;
+      const canvas = document.createElement('canvas');
+      canvas.width = 480;
+      canvas.height = 360;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+      ctx.drawImage(video, 0, 0, 480, 360);
+
+      const img = new Image();
+      img.src = canvas.toDataURL('image/jpeg', 0.85);
+      await new Promise((res) => { img.onload = res; });
+
+      const pose = await poseDetectionService.detectPoseFromImage(img);
+      if (pose) {
+        const annotated = await poseDetectionService.drawPoseToImage(img, pose);
+        if (annotated) {
+          if (performer === 'Banana') {
+            setBananaPoseFrames((prev) => [...prev.slice(-2), annotated]);
+          } else {
+            setApplePoseFrames((prev) => [...prev.slice(-2), annotated]);
+          }
+          return;
+        }
+      }
+      if (performer === 'Banana') {
+        setBananaPoseFrames((prev) => [...prev.slice(-2), img.src]);
+      } else {
+        setApplePoseFrames((prev) => [...prev.slice(-2), img.src]);
+      }
+    } catch (e) {
+      console.warn('Live snapshot notice:', e);
+    }
+  };
+
+  // Start Recording — student taps Stop when done (no fixed time limit)
+  const handleStartRecording = (performer: 'Banana' | 'Apple') => {
+    if (isRecording) return;
+    currentPerformerRef.current = performer;
+
+    if (performer === 'Banana') {
+      setBananaPoseFrames([]);
+      setStep('APPLE_RECORDING');
+    } else {
+      setApplePoseFrames([]);
+      setStep('BANANA_RECORDING');
+    }
+
+    recordedChunksRef.current = [];
+    setIsRecording(true);
+    setRecordSeconds(0);
+
+    // Initial snapshot at start
+    setTimeout(() => captureLivePoseSnapshot(performer), 400);
+
+    // Periodic live snapshot every 1.3s during movement
+    if (snapIntervalRef.current) clearInterval(snapIntervalRef.current);
+    snapIntervalRef.current = setInterval(() => {
+      captureLivePoseSnapshot(performer);
+    }, 1300);
+
+    try {
+      if (activeStream) {
+        let mime = '';
+        if (typeof MediaRecorder !== 'undefined') {
+          if (MediaRecorder.isTypeSupported('video/mp4;codecs=avc1')) {
+            mime = 'video/mp4;codecs=avc1';
+          } else if (MediaRecorder.isTypeSupported('video/mp4')) {
+            mime = 'video/mp4';
+          } else if (MediaRecorder.isTypeSupported('video/webm')) {
+            mime = 'video/webm';
+          }
+        }
+        const recorder = mime ? new MediaRecorder(activeStream, { mimeType: mime }) : new MediaRecorder(activeStream);
+        mediaRecorderRef.current = recorder;
+
+        recorder.ondataavailable = (e) => {
+          if (e.data && e.data.size > 0) recordedChunksRef.current.push(e.data);
+        };
+
+        recorder.onstop = () => {
+          finalizeRecording(currentPerformerRef.current);
+        };
+
+        recorder.start(500); // 500ms timeslices for reliable chunk delivery on iOS
+      }
+    } catch (e) {
+      console.warn('Recording start error:', e);
+    }
+
+    // Count-up timer — students stop manually when done
+    if (timerRef.current) clearInterval(timerRef.current);
+    timerRef.current = setInterval(() => {
+      setRecordSeconds((prev) => prev + 1);
+    }, 1000);
+  };
+
+  const handleStopRecording = () => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+    if (snapIntervalRef.current) {
+      clearInterval(snapIntervalRef.current);
+      snapIntervalRef.current = null;
+    }
+    // Capture final frame
+    captureLivePoseSnapshot(currentPerformerRef.current);
+
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+      try {
+        mediaRecorderRef.current.stop();
+      } catch (e) {
+        console.warn('Error stopping recorder:', e);
+        finalizeRecording(currentPerformerRef.current);
+      }
+    } else {
+      finalizeRecording(currentPerformerRef.current);
+    }
+  };
+
+  const finalizeRecording = (performer: 'Banana' | 'Apple') => {
+    setIsRecording(false);
+    if (snapIntervalRef.current) {
+      clearInterval(snapIntervalRef.current);
+      snapIntervalRef.current = null;
+    }
+
+    const mime = MediaRecorder.isTypeSupported('video/mp4') ? 'video/mp4' : 'video/webm';
+    const fullBlob = recordedChunksRef.current.length > 0
+      ? new Blob(recordedChunksRef.current, { type: mime })
+      : null;
+    const videoUrl = fullBlob ? URL.createObjectURL(fullBlob) : null;
+
+    if (performer === 'Banana') {
+      if (fullBlob) setBananaVideoBlob(fullBlob);
+      if (videoUrl) setBananaVideoUrl(videoUrl);
+      setStep('APPLE_REVIEW');
+    } else {
+      if (fullBlob) setAppleVideoBlob(fullBlob);
+      if (videoUrl) setAppleVideoUrl(videoUrl);
+      setStep('BANANA_REVIEW');
+    }
+  };
+
+  const handleVideoFileUpload = (e: React.ChangeEvent<HTMLInputElement>, performer: 'Banana' | 'Apple') => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const videoUrl = URL.createObjectURL(file);
+    if (performer === 'Banana') {
+      setBananaVideoBlob(file);
+      setBananaVideoUrl(videoUrl);
+      extractPoseFrames(file, setBananaPoseFrames);
+      setStep('APPLE_REVIEW');
+    } else {
+      setAppleVideoBlob(file);
+      setAppleVideoUrl(videoUrl);
+      extractPoseFrames(file, setApplePoseFrames);
+      setStep('BANANA_REVIEW');
+    }
+    e.target.value = '';
+  };
+
+  // Extract keyframes and overlay local MediaPipe pose skeleton safely
+  const extractPoseFrames = async (videoBlob: Blob, setFrames: (f: string[]) => void) => {
+    try {
+      await poseDetectionService.initializeVideoMode();
+      const video = document.createElement('video');
+      video.src = URL.createObjectURL(videoBlob);
+      video.muted = true;
+      video.setAttribute('playsinline', 'true');
+      video.setAttribute('webkit-playsinline', 'true');
+      video.load();
+
+      // Safe race timeout so extraction never blocks review
+      await Promise.race([
+        new Promise((res) => { video.onloadedmetadata = res; }),
+        new Promise((res) => setTimeout(res, 1200))
+      ]);
+
+      const canvas = document.createElement('canvas');
+      canvas.width = 480;
+      canvas.height = 360;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+
+      const frames: string[] = [];
+      const duration = video.duration && !isNaN(video.duration) ? video.duration : 4;
+      const numFrames = 3;
+      const interval = duration / (numFrames + 1);
+
+      for (let i = 1; i <= numFrames; i++) {
+        video.currentTime = i * interval;
+        await Promise.race([
+          new Promise((res) => { video.onseeked = res; }),
+          new Promise((res) => setTimeout(res, 500))
+        ]);
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        const img = new Image();
+        img.src = canvas.toDataURL('image/jpeg');
+        await new Promise((res) => { img.onload = res; });
+
+        const pose = await poseDetectionService.detectPoseFromImage(img);
+        if (pose) {
+          const skeletonFrame = await poseDetectionService.drawPoseToImage(img, pose);
+          if (skeletonFrame) frames.push(skeletonFrame);
+        } else {
+          frames.push(img.src);
+        }
+      }
+      if (frames.length > 0) setFrames(frames);
+    } catch (e) {
+      console.warn('MediaPipe offline extract notice:', e);
+    }
+  };
+
+  const handleCueToggle = (cueId: string, value: boolean, isBananaReview: boolean) => {
+    if (isBananaReview) {
+      setAppleCues((prev) => ({ ...prev, [cueId]: value }));
+    } else {
+      setBananaCues((prev) => ({ ...prev, [cueId]: value }));
+    }
+  };
+
+  /**
+   * Upload a single recorded video to the teacher's Supabase bucket (cloud backup).
+   * If no teacherId (QR not scanned), falls back to saving locally to IndexedDB.
+   */
+  const handleSaveToTeacher = async (performer: 'banana' | 'apple') => {
+    const blob = performer === 'banana' ? bananaVideoBlob : appleVideoBlob;
+    if (!blob) return;
+    const setState = performer === 'banana' ? setBananaSaveState : setAppleSaveState;
+    setState('saving');
+    try {
+      if (teacherId) {
+        // Cloud upload path
+        const url = await uploadGuestVideo(blob, teacherId, lessonId, pairNumber, performer, skillName, pairPhoto, getOrCreatePairClaimToken(lessonId));
+        setState(url ? 'saved' : 'error');
+      } else {
+        // No QR / no teacherId — save video blob to local submission in IndexedDB as backup
+        const safeSkill = skillName.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+        const localId = `sub-${lessonId}-p${pairNumber}-${safeSkill}`;
+        const db = await getDB();
+        const existing = await db.get('submissions', localId);
+        if (existing) {
+          if (performer === 'banana') existing.appleRole = { ...existing.appleRole, videoBlob: blob };
+          else existing.bananaRole = { ...existing.bananaRole, videoBlob: blob };
+          await db.put('submissions', existing);
+        }
+        setState('saved');
+      }
+    } catch {
+      setState('error');
+    }
+  };
+
+  /**
+   * Save full session to iPad (IndexedDB) WITHOUT submitting to the teacher's review tray.
+   * Useful when students want a local backup or teacher hasn't set up the lesson QR yet.
+   */
+  const handleSaveLocally = async () => {
+    setIsSaving(true);
+    const mapCues = (rated: Record<string, boolean>): PeerCueResult[] =>
+      allCues.map((c) => ({
+        cueIndex: c.itemNumber,
+        criterionText: c.syllabusCriterion,
+        isObserved: rated[c.id] ?? false,
+      }));
+
+    const submission: PairSubmissionRecord = {
+      id: `sub-${lessonId}-p${pairNumber}-${skillName.replace(/[^a-z0-9]/gi, '_').toLowerCase()}`,
+      lessonId,
+      pairNumber,
+      skillName,
+      pairPhoto,
+      appleRole: {
+        studentPerformer: 'Banana',
+        evaluator: 'Apple',
+        videoBlob: bananaVideoBlob || undefined,
+        cues: mapCues(bananaCues),
+      },
+      bananaRole: {
+        studentPerformer: 'Apple',
+        evaluator: 'Banana',
+        videoBlob: appleVideoBlob || undefined,
+        cues: mapCues(appleCues),
+      },
+      status: 'pending_sync',
+      createdAt: new Date().toISOString(),
+    };
+
+    try {
+      await queuePairSubmission(submission);
+      setIsOfflineSaved(true);
+      // Show brief success without moving to SESSION_COMPLETED so student can still formally submit
+    } catch (e) {
+      console.error('Local save failed:', e);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+
+  // Final Submit Action — uses the unified uploadPeerSessionToTeacher path
+  // which correctly sets contentType: 'video/mp4' (critical for iOS Safari)
+  // and does a single upsert with all data.
+  const handleSubmitSession = async () => {
+    setIsSaving(true);
+    setSubmitError(null);
+
+    const mapCues = (rated: Record<string, boolean>): PeerCueResult[] =>
+      allCues.map((c) => ({
+        cueIndex: c.itemNumber,
+        criterionText: c.syllabusCriterion,
+        isObserved: rated[c.id] ?? false,
+      }));
+
+    try {
+      // ── Cloud upload (teacher always provides teacherId via QR scan) ────────
+      if (teacherId) {
+        console.log('[Submit] Uploading session to teacher:', teacherId);
+        const result = await uploadPeerSessionToTeacher({
+          teacherId,
+          lessonId,
+          pairNumber,
+          skillName,
+          pairPhoto,
+          bananaBlob: bananaVideoBlob || undefined,
+          appleBlob: appleVideoBlob || undefined,
+          bananaCues: mapCues(bananaCues),
+          appleCues: mapCues(appleCues),
+          claimToken: getOrCreatePairClaimToken(lessonId),
+        });
+
+        if (result.blocked) {
+          setSubmitError(`Pair ${pairNumber} is already in use by another group. Ask your teacher to clear it, or check in again with a different pair number.`);
+          console.warn('[Submit] uploadPeerSessionToTeacher blocked — pair claimed by another group');
+        } else if (!result.success) {
+          setSubmitError('Video uploaded but could not reach teacher dashboard. Please check your connection and try again.');
+          console.warn('[Submit] uploadPeerSessionToTeacher returned success=false');
+        } else {
+          console.log('[Submit] Cloud upload complete ✓ banana:', result.bananaVideoUrl, 'apple:', result.appleVideoUrl);
+        }
+      } else {
+        console.warn('[Submit] No teacherId — QR was not scanned. Saving locally only.');
+      }
+
+      // ── Local IndexedDB backup (always, regardless of cloud result) ─────────
+      const submission: PairSubmissionRecord = {
+        id: `sub-${lessonId}-p${pairNumber}-${skillName.replace(/[^a-z0-9]/gi, '_').toLowerCase()}`,
+        lessonId,
+        pairNumber,
+        skillName,
+        pairPhoto,
+        appleRole: {
+          studentPerformer: 'Banana',
+          evaluator: 'Apple',
+          videoBlob: bananaVideoBlob || undefined,
+          cues: mapCues(bananaCues),
+        },
+        bananaRole: {
+          studentPerformer: 'Apple',
+          evaluator: 'Banana',
+          videoBlob: appleVideoBlob || undefined,
+          cues: mapCues(appleCues),
+        },
+        status: 'pending_sync',
+        createdAt: new Date().toISOString(),
+      };
+      await queuePairSubmission(submission);
+
+      setIsOfflineSaved(true);
+      setStep('SESSION_COMPLETED');
+    } catch (e) {
+      console.error('[Submit] Unexpected error:', e);
+      setSubmitError('Something went wrong. Please try again.');
+      // Still move to completed so student isn't stuck
+      setIsOfflineSaved(true);
+      setStep('SESSION_COMPLETED');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  return (
+    <div className="flex flex-col h-full bg-slate-900 text-white select-none">
+      {/* Global Hidden File Inputs for Apple & Banana Video Uploads */}
+      <input
+        ref={uploadInputBananaRef}
+        type="file"
+        accept="video/*"
+        className="hidden"
+        onChange={(e) => handleVideoFileUpload(e, 'Banana')}
+      />
+      <input
+        ref={uploadInputAppleRef}
+        type="file"
+        accept="video/*"
+        className="hidden"
+        onChange={(e) => handleVideoFileUpload(e, 'Apple')}
+      />
+      
+      {/* Top Bar: Role Indicators & Step Progress */}
+      <div className="flex items-center justify-between px-4 py-3 bg-slate-950/80 border-b border-slate-800 backdrop-blur-md">
+        <div className="flex items-center gap-2">
+          <span className="text-xl">🏃‍♂️</span>
+          <div>
+            <h1 className="text-sm font-black tracking-wide text-indigo-400">PAIR #{pairNumber}</h1>
+            <p className="text-[11px] text-slate-400 font-semibold">{skillName}</p>
+          </div>
+        </div>
+
+        {/* Current Active Role Highlight */}
+        <div className="flex items-center gap-2">
+          {step.startsWith('APPLE') ? (
+            <div className="flex items-center gap-1.5 px-3 py-1 bg-red-600/90 text-white rounded-full text-xs font-black ring-2 ring-red-400">
+              <span>🍎 Apple</span>
+              <span className="text-[10px] font-normal opacity-85">is Recording</span>
+            </div>
+          ) : step === 'SWAP_PROMPT' ? (
+            <div className="flex items-center gap-1 px-3 py-1 bg-indigo-600 text-white rounded-full text-xs font-black animate-bounce">
+              <span>🔄 Swap Roles!</span>
+            </div>
+          ) : step.startsWith('BANANA') ? (
+            <div className="flex items-center gap-1.5 px-3 py-1 bg-amber-500 text-slate-950 rounded-full text-xs font-black ring-2 ring-amber-300">
+              <span>🍌 Banana</span>
+              <span className="text-[10px] font-normal opacity-85">is Recording</span>
+            </div>
+          ) : (
+            <div className="px-3 py-1 bg-emerald-600 text-white rounded-full text-xs font-black">
+              ✓ Completed
+            </div>
+          )}
+
+          <button
+            onClick={onExit}
+            className="text-xs text-slate-400 hover:text-white px-2 py-1"
+          >
+            Exit
+          </button>
+        </div>
+      </div>
+
+      {/* MAIN VIEWPORT */}
+      <div className="flex-1 relative flex flex-col items-center p-2.5 sm:p-4 overflow-y-auto pb-36">
+
+        {/* STEP 1: APPLE RECORDING BANANA */}
+        {(step === 'APPLE_INTRO' || step === 'APPLE_RECORDING') && (
+          <div className="w-full max-w-xl flex flex-col items-center justify-between gap-3">
+            <div className="w-full bg-slate-800/90 rounded-2xl p-3 text-center border border-slate-700">
+              <span className="text-xs font-bold text-red-300">🍎 Apple's Turn to Record:</span>
+              <p className="text-sm font-black text-white">Point camera at Banana performing {skillName}!</p>
+            </div>
+
+            {/* Camera Viewport */}
+            <div className="relative w-full h-56 sm:h-72 max-h-[40vh] bg-black rounded-3xl overflow-hidden border-2 border-slate-800 flex items-center justify-center">
+              <video
+                ref={(el) => {
+                  videoPreviewRef.current = el;
+                  attachStreamToVideo(el, activeStream);
+                }}
+                autoPlay
+                playsInline
+                muted
+                className="w-full h-full object-cover"
+              />
+
+              {isRecording && (
+                <div className="absolute top-3 left-3 flex items-center gap-2 px-3 py-1.5 bg-red-600/90 text-white rounded-full text-xs font-bold animate-pulse">
+                  <div className="w-2.5 h-2.5 bg-white rounded-full" />
+                  <span>RECORDING: {recordSeconds}s</span>
+                </div>
+              )}
+            </div>
+
+            {/* Big Kid Record / Stop Button & Upload Video Option */}
+            <div className="w-full flex flex-col items-center gap-2">
+              {isRecording ? (
+                <button
+                  type="button"
+                  onClick={handleStopRecording}
+                  className="w-full py-4 bg-amber-500 hover:bg-amber-400 active:scale-98 text-slate-950 text-base md:text-lg font-black rounded-3xl shadow-xl transition-all flex items-center justify-center gap-3 cursor-pointer animate-pulse"
+                >
+                  <div className="w-4 h-4 bg-slate-950 rounded-xs" />
+                  <span>Stop Recording ⏹️ ({recordSeconds}s)</span>
+                </button>
+              ) : (
+                <div className="w-full flex flex-col gap-2">
+                  <div className="flex gap-2 w-full">
+                    <button
+                      type="button"
+                      onClick={() => handleStartRecording('Banana')}
+                      className="flex-1 py-3.5 sm:py-4 bg-red-600 hover:bg-red-500 active:scale-98 text-white text-sm sm:text-base font-black rounded-2xl sm:rounded-3xl shadow-xl shadow-red-600/30 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                    >
+                      <div className="w-3.5 h-3.5 bg-white rounded-full animate-ping" />
+                      <span>Record Live 🎥</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => uploadInputBananaRef.current?.click()}
+                      className="px-4 sm:px-5 py-3.5 sm:py-4 bg-slate-800 hover:bg-slate-700 active:scale-98 text-slate-200 text-xs sm:text-sm font-bold rounded-2xl sm:rounded-3xl border border-slate-700 shadow-xl transition-all flex items-center justify-center gap-2 cursor-pointer"
+                    >
+                      <span>📁 Upload Video</span>
+                    </button>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => finalizeRecording('Banana')}
+                    className="text-xs text-slate-400 hover:text-white py-1 cursor-pointer font-semibold text-center"
+                  >
+                    Skip recording / Go straight to review ➔
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* STEP 2: APPLE REVIEWS BANANA WITH MOE PE SYLLABUS CUES */}
+        {step === 'APPLE_REVIEW' && (
+          <div className="w-full max-w-xl flex flex-col pb-4 animate-fade-in">
+            <div className="bg-slate-800/90 p-3 rounded-2xl border border-slate-700 mb-3">
+              <p className="text-xs font-bold text-amber-400">🍎 Apple, check Banana's movement:</p>
+              <p className="text-xs text-slate-400">Watch the replay and tap thumbs up or down for each syllabus rule.</p>
+            </div>
+
+            {/* Video Replay with VideoAnalysisPlayer */}
+            {bananaVideoUrl ? (
+              <div className="w-full aspect-video sm:aspect-auto sm:max-h-52 bg-black rounded-2xl overflow-hidden border border-slate-700 mb-3 flex items-center justify-center">
+                <VideoAnalysisPlayer src={bananaVideoUrl} label="Banana with AI Skeleton" />
+              </div>
+            ) : (
+              <div className="w-full bg-slate-800/60 rounded-2xl border-2 border-dashed border-indigo-500/50 p-4 mb-3 flex flex-col items-center justify-center text-center gap-2">
+                <span className="text-2xl">📹</span>
+                <p className="text-xs font-bold text-slate-300">No video recorded for Banana yet</p>
+                <button
+                  type="button"
+                  onClick={() => uploadInputBananaRef.current?.click()}
+                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-black shadow-md cursor-pointer flex items-center gap-1.5"
+                >
+                  <span>📁 Upload Video for Banana</span>
+                </button>
+              </div>
+            )}
+
+            {/* MediaPipe Skeleton Freeze Frames */}
+            {bananaPoseFrames.length > 0 && (
+              <div className="mb-3">
+                <div className="flex items-center justify-between text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1 px-1">
+                  <span>AI Skeleton Motion Capture</span>
+                  <span className="text-emerald-400 font-extrabold">✓ {bananaPoseFrames.length} Frames Tracked</span>
+                </div>
+                <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-thin">
+                  {bananaPoseFrames.map((frame, i) => (
+                    <div key={i} className="relative shrink-0 w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden border border-indigo-500/80 bg-black shadow-sm">
+                      <img src={frame} alt={`Frame ${i + 1}`} className="w-full h-full object-cover" />
+                      <span className="absolute bottom-0.5 left-1 px-1 py-0.2 bg-black/80 text-[9px] font-mono font-bold text-white rounded backdrop-blur-xs">
+                        #{i + 1}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Checklist Toggle: 3 Quick Cues vs All MOE Items */}
+            <div className="flex bg-slate-800 p-1 rounded-xl border border-slate-700 mb-2.5 shrink-0">
+              <button
+                type="button"
+                onClick={() => setShowFullChecklist(false)}
+                className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  !showFullChecklist
+                    ? 'bg-indigo-600 text-white shadow-xs'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                ⭐ 3 Quick Cues
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowFullChecklist(true)}
+                className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  showFullChecklist
+                    ? 'bg-indigo-600 text-white shadow-xs'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                📋 All {allCues.length} MOE Rules
+              </button>
+            </div>
+
+            {/* MOE Syllabus Peer Cues List */}
+            <div className="space-y-2 mb-3">
+              {displayedCues.map((cue) => {
+                const isChecked = bananaCues[cue.id];
+                return (
+                  <div key={cue.id} className="p-2.5 bg-slate-800/80 rounded-2xl border border-slate-700 flex items-center justify-between gap-2.5">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[10px] font-mono font-black px-1.5 py-0.5 bg-slate-700 text-indigo-300 rounded">
+                          #{cue.itemNumber}
+                        </span>
+                        <span className="text-base">{cue.icon}</span>
+                        <p className="text-xs font-black text-white leading-tight">{cue.kidFriendlyText}</p>
+                      </div>
+                      <p className="text-[10px] text-slate-400 mt-0.5 line-clamp-1 italic">
+                        MOE Standard: {cue.syllabusCriterion}
+                      </p>
+                    </div>
+
+                    <div className="flex gap-1.5 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => handleCueToggle(cue.id, true, false)}
+                        className={`px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                          isChecked === true
+                            ? 'bg-emerald-600 text-white ring-2 ring-white scale-105'
+                            : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                        }`}
+                      >
+                        👍 Yes!
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleCueToggle(cue.id, false, false)}
+                        className={`px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                          isChecked === false
+                            ? 'bg-red-600 text-white ring-2 ring-white scale-105'
+                            : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                        }`}
+                      >
+                        👎 Try Again
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Actions: Re-do, Upload, Continue */}
+            <div className="flex flex-col gap-2 mt-2">
+              <button
+                type="button"
+                onClick={() => setStep('SWAP_PROMPT')}
+                className="w-full py-4 bg-indigo-600 hover:bg-indigo-500 font-black rounded-2xl text-base shadow-lg shadow-indigo-600/30 transition-all flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <span>Next: Swap Roles 🍎 ⇄ 🍌</span>
+                <span>→</span>
+              </button>
+
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setBananaVideoUrl(null);
+                    setBananaVideoBlob(null);
+                    setBananaPoseFrames([]);
+                    setBananaSaveState('idle');
+                    setStep('APPLE_INTRO');
+                  }}
+                  className="flex-1 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl text-xs border border-slate-700 transition-all cursor-pointer text-center"
+                >
+                  ↺ Re-record
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => uploadInputBananaRef.current?.click()}
+                  className="flex-1 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl text-xs border border-slate-700 transition-all cursor-pointer text-center"
+                >
+                  📁 {bananaVideoUrl ? 'Change Video' : 'Upload Video'}
+                </button>
+
+                {bananaVideoBlob && (
+                  <button
+                    type="button"
+                    disabled={bananaSaveState === 'saving' || bananaSaveState === 'saved'}
+                    onClick={() => handleSaveToTeacher('banana')}
+                    className={`flex-1 py-3 font-bold rounded-xl text-xs transition-all cursor-pointer disabled:cursor-not-allowed text-center ${
+                      bananaSaveState === 'saved'
+                        ? 'bg-emerald-700 text-white'
+                        : bananaSaveState === 'error'
+                        ? 'bg-red-700 text-white'
+                        : 'bg-sky-700 hover:bg-sky-600 text-white'
+                    }`}
+                  >
+                    {bananaSaveState === 'saving' ? '⏳ Saving…' : bananaSaveState === 'saved' ? '✓ Saved!' : bananaSaveState === 'error' ? '⚠ Retry' : '☁️ Save Video'}
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* STEP 3: CELEBRATION & ROLE SWAP SCREEN */}
+        {step === 'SWAP_PROMPT' && (
+          <div className="w-full max-w-md bg-slate-800 p-6 rounded-3xl border-2 border-indigo-500 text-center flex flex-col items-center animate-scale-in">
+            <span className="text-6xl mb-3 animate-spin">🔄</span>
+            <h2 className="text-2xl font-black text-white">SWAP ROLES NOW!</h2>
+            
+            <div className="my-4 p-4 bg-slate-900/80 rounded-2xl border border-slate-700 text-left space-y-2 text-sm w-full">
+              <p className="flex items-center gap-2 text-amber-300 font-bold">
+                <span>🍌 Banana:</span> Grab the iPad! You are recording now!
+              </p>
+              <p className="flex items-center gap-2 text-red-300 font-bold">
+                <span>🍎 Apple:</span> Stand back and get ready to perform!
+              </p>
+            </div>
+
+            <div className="flex flex-col gap-2 w-full">
+              <button
+                type="button"
+                onClick={() => handleStartRecording('Apple')}
+                className="w-full py-4 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-2xl text-lg shadow-xl shadow-amber-500/20 transition-all flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <span>Record Apple Live 🎥</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => uploadInputAppleRef.current?.click()}
+                className="w-full py-3 bg-slate-700 hover:bg-slate-600 text-slate-200 font-bold rounded-2xl text-sm border border-slate-600 transition-all flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <span>📁 Or Upload Video of Apple</span>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* STEP 4: BANANA RECORDING APPLE */}
+        {step === 'BANANA_RECORDING' && (
+          <div className="w-full max-w-xl flex flex-col items-center justify-between gap-3">
+            <div className="w-full bg-slate-800/90 rounded-2xl p-3 text-center border border-slate-700">
+              <span className="text-xs font-bold text-amber-400">🍌 Banana's Turn to Record:</span>
+              <p className="text-sm font-black text-white">Hold camera steady! Apple is performing {skillName}.</p>
+            </div>
+
+            <div className="relative w-full h-56 sm:h-72 max-h-[40vh] bg-black rounded-3xl overflow-hidden border-2 border-slate-800 flex items-center justify-center">
+              <video
+                ref={(el) => {
+                  videoPreviewRef.current = el;
+                  attachStreamToVideo(el, activeStream);
+                }}
+                autoPlay
+                playsInline
+                muted
+                className="w-full h-full object-cover"
+              />
+              
+              {isRecording && (
+                <div className="absolute top-3 left-3 flex items-center gap-2 px-3 py-1.5 bg-amber-500 text-slate-950 rounded-full text-xs font-black animate-pulse">
+                  <div className="w-2.5 h-2.5 bg-slate-950 rounded-full" />
+                  <span>RECORDING: {recordSeconds}s</span>
+                </div>
+              )}
+            </div>
+
+            {/* Big Kid Record / Stop Button for Banana & Upload Video Option */}
+            <div className="w-full flex flex-col items-center gap-2">
+              {isRecording ? (
+                <button
+                  type="button"
+                  onClick={handleStopRecording}
+                  className="w-full py-4 bg-amber-500 hover:bg-amber-400 active:scale-98 text-slate-950 text-base md:text-lg font-black rounded-3xl shadow-xl transition-all flex items-center justify-center gap-3 cursor-pointer animate-pulse"
+                >
+                  <div className="w-4 h-4 bg-slate-950 rounded-xs" />
+                  <span>Stop Recording ⏹️ ({recordSeconds}s)</span>
+                </button>
+              ) : (
+                <div className="w-full flex flex-col gap-2">
+                  <div className="flex gap-2 w-full">
+                    <button
+                      type="button"
+                      onClick={() => handleStartRecording('Apple')}
+                      className="flex-1 py-3.5 sm:py-4 bg-amber-500 hover:bg-amber-400 active:scale-98 text-slate-950 font-black rounded-2xl sm:rounded-3xl text-sm sm:text-base shadow-xl shadow-amber-500/20 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                    >
+                      <span>Record Live 🎥</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => uploadInputAppleRef.current?.click()}
+                      className="px-4 sm:px-5 py-3.5 sm:py-4 bg-slate-800 hover:bg-slate-700 active:scale-98 text-slate-200 text-xs sm:text-sm font-bold rounded-2xl sm:rounded-3xl border border-slate-700 shadow-xl transition-all flex items-center justify-center gap-2 cursor-pointer"
+                    >
+                      <span>📁 Upload Video</span>
+                    </button>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => finalizeRecording('Apple')}
+                    className="text-xs text-slate-400 hover:text-white py-1 cursor-pointer font-semibold text-center"
+                  >
+                    Skip recording / Go straight to review ➔
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* STEP 5: BANANA REVIEWS APPLE */}
+        {step === 'BANANA_REVIEW' && (
+          <div className="w-full max-w-xl flex flex-col pb-4 animate-fade-in">
+            <div className="bg-slate-800/90 p-3 rounded-2xl border border-slate-700 mb-3">
+              <p className="text-xs font-bold text-amber-400">🍌 Banana, check Apple's movement:</p>
+              <p className="text-xs text-slate-400">Watch the replay and check off the syllabus rules.</p>
+            </div>
+
+            {/* Video Replay with VideoAnalysisPlayer */}
+            {appleVideoUrl ? (
+              <div className="w-full aspect-video sm:aspect-auto sm:max-h-52 bg-black rounded-2xl overflow-hidden border border-slate-700 mb-3 flex items-center justify-center">
+                <VideoAnalysisPlayer src={appleVideoUrl} label="Apple with AI Skeleton" />
+              </div>
+            ) : (
+              <div className="w-full bg-slate-800/60 rounded-2xl border-2 border-dashed border-amber-500/50 p-4 mb-3 flex flex-col items-center justify-center text-center gap-2">
+                <span className="text-2xl">📹</span>
+                <p className="text-xs font-bold text-slate-300">No video recorded for Apple yet</p>
+                <button
+                  type="button"
+                  onClick={() => uploadInputAppleRef.current?.click()}
+                  className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl text-xs font-black shadow-md cursor-pointer flex items-center gap-1.5"
+                >
+                  <span>📁 Upload Video for Apple</span>
+                </button>
+              </div>
+            )}
+
+            {/* MediaPipe Skeleton Freeze Frames */}
+            {applePoseFrames.length > 0 && (
+              <div className="mb-3">
+                <div className="flex items-center justify-between text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1 px-1">
+                  <span>AI Skeleton Motion Capture</span>
+                  <span className="text-emerald-400 font-extrabold">✓ {applePoseFrames.length} Frames Tracked</span>
+                </div>
+                <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-thin">
+                  {applePoseFrames.map((frame, i) => (
+                    <div key={i} className="relative shrink-0 w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden border border-amber-500/80 bg-black shadow-sm">
+                      <img src={frame} alt={`Frame ${i + 1}`} className="w-full h-full object-cover" />
+                      <span className="absolute bottom-0.5 left-1 px-1 py-0.2 bg-black/80 text-[9px] font-mono font-bold text-white rounded backdrop-blur-xs">
+                        #{i + 1}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Checklist Toggle: 3 Quick Cues vs All MOE Items */}
+            <div className="flex bg-slate-800 p-1 rounded-xl border border-slate-700 mb-2.5 shrink-0">
+              <button
+                type="button"
+                onClick={() => setShowFullChecklist(false)}
+                className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  !showFullChecklist
+                    ? 'bg-indigo-600 text-white shadow-xs'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                ⭐ 3 Quick Cues
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowFullChecklist(true)}
+                className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  showFullChecklist
+                    ? 'bg-indigo-600 text-white shadow-xs'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                📋 All {allCues.length} MOE Rules
+              </button>
+            </div>
+
+            {/* MOE Syllabus Peer Cues List */}
+            <div className="space-y-2 mb-3">
+              {displayedCues.map((cue) => {
+                const isChecked = appleCues[cue.id];
+                return (
+                  <div key={cue.id} className="p-2.5 bg-slate-800/80 rounded-2xl border border-slate-700 flex items-center justify-between gap-2.5">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[10px] font-mono font-black px-1.5 py-0.5 bg-slate-700 text-amber-300 rounded">
+                          #{cue.itemNumber}
+                        </span>
+                        <span className="text-base">{cue.icon}</span>
+                        <p className="text-xs font-black text-white leading-tight">{cue.kidFriendlyText}</p>
+                      </div>
+                      <p className="text-[10px] text-slate-400 mt-0.5 line-clamp-1 italic">
+                        MOE Standard: {cue.syllabusCriterion}
+                      </p>
+                    </div>
+
+                    <div className="flex gap-1.5 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => handleCueToggle(cue.id, true, true)}
+                        className={`px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                          isChecked === true
+                            ? 'bg-emerald-600 text-white ring-2 ring-white scale-105'
+                            : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                        }`}
+                      >
+                        👍 Yes!
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleCueToggle(cue.id, false, true)}
+                        className={`px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                          isChecked === false
+                            ? 'bg-red-600 text-white ring-2 ring-white scale-105'
+                            : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                        }`}
+                      >
+                        👎 Try Again
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Actions: Prominent Submit + Secondary Actions */}
+            <div className="flex flex-col gap-2 mt-2">
+              {/* PRIMARY ACTION BUTTON */}
+              <button
+                type="button"
+                disabled={isSaving}
+                onClick={handleSubmitSession}
+                className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 active:scale-98 font-black rounded-2xl text-base shadow-xl shadow-emerald-600/30 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
+              >
+                <span>{isSaving ? '🚀 Syncing to Teacher Review Tray…' : 'Send to Teacher Review Tray 🚀'}</span>
+              </button>
+
+              {/* Error banner — shown if cloud upload fails */}
+              {submitError && (
+                <div className="w-full px-3 py-2 bg-red-900/60 border border-red-500 rounded-xl text-red-200 text-xs font-medium flex items-start gap-2">
+                  <span className="text-base shrink-0">⚠️</span>
+                  <span>{submitError}</span>
+                </div>
+              )}
+
+              {/* SECONDARY ROW */}
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAppleVideoUrl(null);
+                    setAppleVideoBlob(null);
+                    setApplePoseFrames([]);
+                    setAppleSaveState('idle');
+                    setStep('SWAP_PROMPT');
+                  }}
+                  className="flex-1 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl text-xs border border-slate-700 transition-all cursor-pointer text-center"
+                >
+                  ↺ Re-record
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => uploadInputAppleRef.current?.click()}
+                  className="flex-1 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl text-xs border border-slate-700 transition-all cursor-pointer text-center"
+                >
+                  📁 {appleVideoUrl ? 'Change Video' : 'Upload Video'}
+                </button>
+
+                <button
+                  type="button"
+                  disabled={isSaving || isOfflineSaved}
+                  onClick={handleSaveLocally}
+                  className={`flex-1 py-3 font-bold rounded-xl text-xs border transition-all cursor-pointer text-center ${
+                    isOfflineSaved
+                      ? 'bg-slate-700 border-slate-600 text-emerald-400'
+                      : 'bg-slate-800 hover:bg-slate-700 border-slate-700 text-slate-300'
+                  }`}
+                  title="Save copy directly to iPad storage"
+                >
+                  {isOfflineSaved ? '✓ Saved iPad' : '💾 Save iPad'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* STEP 6: SESSION COMPLETED (OFFLINE SAFE CONFIRMATION) */}
+        {step === 'SESSION_COMPLETED' && (
+          <div className="w-full max-w-md bg-slate-800 p-6 rounded-3xl border-2 border-emerald-500 text-center flex flex-col items-center animate-scale-in">
+            <span className="text-6xl mb-3 animate-bounce">🎉</span>
+            <h2 className="text-2xl font-black text-white">MISSION COMPLETE!</h2>
+            <p className="text-xs text-emerald-400 font-bold mt-1">Both Apple & Banana Finished Practice</p>
+
+            {isOfflineSaved && (
+              <div className="my-4 p-3 bg-emerald-950/60 border border-emerald-500/40 rounded-2xl text-xs text-emerald-300 flex items-center gap-2">
+                <span className="text-lg">💾</span>
+                <span className="text-left leading-relaxed">
+                  Saved safely to iPad storage! The teacher will receive your videos when the iPad connects to Wi-Fi.
+                </span>
+              </div>
+            )}
+
+            <div className="p-4 bg-slate-900 rounded-2xl w-full border border-slate-700 my-2">
+              <p className="text-sm font-bold text-white mb-1">Teacher Instructions:</p>
+              <p className="text-xs text-slate-300 leading-relaxed">
+                1. Put the iPad down safely.<br />
+                2. High-five your partner! 🤝<br />
+                3. Sit down quietly in your pair spot.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                if (onSendToCoachBot) {
+                  onSendToCoachBot({
+                    pairNumber,
+                    lessonId,
+                    skillName,
+                    pairPhoto,
+                    appleVideoBlob: appleVideoBlob || undefined,
+                    applePoseFrames,
+                    appleCues,
+                    bananaVideoBlob: bananaVideoBlob || undefined,
+                    bananaPoseFrames,
+                    bananaCues,
+                  });
+                } else {
+                  onSessionComplete();
+                }
+              }}
+              className="mt-4 w-full py-4 bg-indigo-600 hover:bg-indigo-500 active:scale-98 text-white font-black rounded-2xl text-base shadow-xl shadow-indigo-600/30 transition-all flex items-center justify-center gap-2 cursor-pointer animate-pulse"
+            >
+              <span>🤖 Ask Coach Bot to Analyze Movement</span>
+              <span>➔</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={onSessionComplete}
+              className="mt-2 w-full py-2.5 bg-transparent hover:bg-slate-700/50 text-slate-400 hover:text-white font-bold rounded-xl text-xs transition-all cursor-pointer"
+            >
+              Finished Lesson (Back to Home)
+            </button>
+          </div>
+        )}
+
+      </div>
+    </div>
+  );
+};

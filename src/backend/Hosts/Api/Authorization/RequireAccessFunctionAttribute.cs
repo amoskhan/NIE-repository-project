@@ -26,7 +26,7 @@ public sealed class RequireAccessFunctionAttribute : Attribute, IAsyncAuthorizat
     {
         if (_accessFunctionCodes.Length == 0)
         {
-            context.Result = new ForbidResult();
+            context.Result = new StatusCodeResult(StatusCodes.Status403Forbidden);
             return;
         }
 
@@ -66,6 +66,6 @@ public sealed class RequireAccessFunctionAttribute : Attribute, IAsyncAuthorizat
             string.Join(", ", _accessFunctionCodes),
             httpContext.Request.Path.Value);
 
-        context.Result = new ForbidResult();
+        context.Result = new StatusCodeResult(StatusCodes.Status403Forbidden);
     }
 }

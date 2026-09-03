@@ -29,7 +29,7 @@ public sealed class RequireAccessFunctionAttributeTests
         var context = MvcTestContext.CreateAuthorizationContext(httpContext);
         await new RequireAccessFunctionAttribute().OnAuthorizationAsync(context);
 
-        Assert.IsType<ForbidResult>(context.Result);
+        AssertForbidden(context.Result);
         await _accessFunctions.DidNotReceive().HasAccessAsync(Arg.Any<string>(), Arg.Any<string>());
         await _auditLogger.DidNotReceive().LogAccessDeniedAsync(
             Arg.Any<string>(),
@@ -48,7 +48,7 @@ public sealed class RequireAccessFunctionAttributeTests
         var context = MvcTestContext.CreateAuthorizationContext(httpContext);
         await new RequireAccessFunctionAttribute(blankCode).OnAuthorizationAsync(context);
 
-        Assert.IsType<ForbidResult>(context.Result);
+        AssertForbidden(context.Result);
         await _accessFunctions.DidNotReceive().HasAccessAsync(Arg.Any<string>(), Arg.Any<string>());
     }
 
@@ -146,7 +146,7 @@ public sealed class RequireAccessFunctionAttributeTests
         await new RequireAccessFunctionAttribute(ReadCode, "API.SAMPLE.READ", ReadCode)
             .OnAuthorizationAsync(context);
 
-        Assert.IsType<ForbidResult>(context.Result);
+        AssertForbidden(context.Result);
         await _accessFunctions.Received(1).HasAccessAsync("user-1", Arg.Any<string>());
     }
 
@@ -160,7 +160,7 @@ public sealed class RequireAccessFunctionAttributeTests
         var context = MvcTestContext.CreateAuthorizationContext(httpContext);
         await new RequireAccessFunctionAttribute(ReadCode, ManageCode).OnAuthorizationAsync(context);
 
-        Assert.IsType<ForbidResult>(context.Result);
+        AssertForbidden(context.Result);
         await _auditLogger.Received(1).LogAccessDeniedAsync(
             "user-1",
             $"{ReadCode}, {ManageCode}",
@@ -191,5 +191,11 @@ public sealed class RequireAccessFunctionAttributeTests
             .BuildServiceProvider();
 
         return MvcTestContext.CreateHttpContext(userId, accessFunctions, services: services);
+    }
+
+    private static void AssertForbidden(IActionResult? result)
+    {
+        var status = Assert.IsType<StatusCodeResult>(result);
+        Assert.Equal(StatusCodes.Status403Forbidden, status.StatusCode);
     }
 }
