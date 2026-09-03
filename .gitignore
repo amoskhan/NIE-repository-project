@@ -210,3 +210,12 @@ src/frontend/temp/
 StrykerOutput/
 src/frontend/reports/mutation/
 src/frontend/.stryker-tmp/
+
+# Ignite workspace runtime state and local tool caches.
+.ignite/
+
+# Ignite workspace runtime state and local tool caches.
+.understand-anything/intermediate/
+
+# Ignite workspace runtime state and local tool caches.
+.understand-anything/tmp/

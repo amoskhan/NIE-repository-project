@@ -1,0 +1,65 @@
+{
+  "$schema": "./docs/ignite.services.schema.json",
+  "version": 1,
+  "template": "nie-template",
+  "services": [
+    {
+      "id": "preview-main",
+      "displayName": "Main application",
+      "kind": "frontend",
+      "workingDirectory": "src/frontend",
+      "command": [
+        "pnpm",
+        "--filter",
+        "@nie/main",
+        "exec",
+        "vite",
+        "--mode",
+        "development"
+      ],
+      "port": 18002,
+      "healthPath": "/",
+      "primary": true,
+      "required": true
+    },
+    {
+      "id": "preview-auth",
+      "displayName": "Authentication application",
+      "kind": "frontend",
+      "workingDirectory": "src/frontend",
+      "command": [
+        "pnpm",
+        "--filter",
+        "@nie/auth",
+        "exec",
+        "vite",
+        "--mode",
+        "development"
+      ],
+      "port": 18001,
+      "healthPath": "/",
+      "primary": false,
+      "required": true
+    },
+    {
+      "id": "main-api",
+      "displayName": "Main API",
+      "kind": "backend",
+      "project": "src/backend/Hosts/Api/Api.csproj",
+      "assembly": "Api",
+      "port": 15002,
+      "healthPath": "/health/live",
+      "required": true
+    },
+    {
+      "id": "auth-api",
+      "displayName": "Authentication API",
+      "kind": "backend",
+      "project": "src/backend/Hosts/Auth/Auth.csproj",
+      "assembly": "Auth",
+      "port": 15001,
+      "healthPath": "/health/live",
+      "required": true
+    }
+  ]
+}

@@ -1,0 +1,37 @@
+{
+  "schema_version": "1.0",
+  "presets": {
+    "nie-ignite": {
+      "version": "1.4.0",
+      "source": "local",
+      "manifest_hash": "sha256:f61eff3afbca762a6a75933d0d11cf5e2bea064ed2be52af1ccf28094b50e40b",
+      "enabled": true,
+      "priority": 5,
+      "registered_commands": {
+        "codex": [
+          "speckit.specify",
+          "speckit.plan",
+          "speckit.tasks",
+          "speckit.implement",
+          "speckit.nie-refine",
+          "speckit.nie-screen",
+          "speckit.nie-reconcile",
+          "speckit.nie-implement-task"
+        ]
+      },
+      "registered_skills": {
+        "codex": [
+          "speckit-specify",
+          "speckit-plan",
+          "speckit-tasks",
+          "speckit-implement",
+          "speckit-nie-refine",
+          "speckit-nie-screen",
+          "speckit-nie-reconcile",
+          "speckit-nie-implement-task"
+        ]
+      },
+      "installed_at": "2026-09-03T07:14:15.936670+00:00"
+    }
+  }
+}

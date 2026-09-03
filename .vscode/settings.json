@@ -1,5 +1,5 @@
 {
-  "remote.autoForwardPorts": false,
+  "remote.autoForwardPorts": true,
   "dotnet.projects.enableFileBasedPrograms": false,
   "editor.defaultFormatter": "esbenp.prettier-vscode",
   "[javascript]": {
@@ -7,5 +7,28 @@
   },
   "[vue]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "remote.restoreForwardedPorts": true,
+  "remote.portsAttributes": {
+    "15001": {
+      "label": "Auth API",
+      "onAutoForward": "silent",
+      "protocol": "http"
+    },
+    "15002": {
+      "label": "Main API",
+      "onAutoForward": "silent",
+      "protocol": "http"
+    },
+    "18001": {
+      "label": "Auth frontend",
+      "onAutoForward": "silent",
+      "protocol": "http"
+    },
+    "18002": {
+      "label": "Main frontend",
+      "onAutoForward": "silent",
+      "protocol": "http"
+    }
   }
 }

@@ -1,0 +1,39 @@
+{
+  "version": "0.15.2",
+  "integration_state_schema": 1,
+  "installed_integrations": [
+    "codex",
+    "claude",
+    "gemini",
+    "copilot",
+    "kiro-cli"
+  ],
+  "integration_settings": {
+    "codex": {
+      "script": "sh",
+      "invoke_separator": "-"
+    },
+    "claude": {
+      "script": "sh",
+      "invoke_separator": "-"
+    },
+    "gemini": {
+      "script": "sh",
+      "invoke_separator": "."
+    },
+    "copilot": {
+      "script": "sh",
+      "raw_options": "--skills",
+      "parsed_options": {
+        "skills": true
+      },
+      "invoke_separator": "-"
+    },
+    "kiro-cli": {
+      "script": "sh",
+      "invoke_separator": "."
+    }
+  },
+  "integration": "codex",
+  "default_integration": "codex"
+}

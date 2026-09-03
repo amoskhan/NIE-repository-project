@@ -24,6 +24,8 @@ dotenv.config({ path: localEnvPath, override: true });
 
 // Parse headless setting from environment (default: true for CI, false for local dev)
 const isHeadless = process.env.HEADLESS === "true" || process.env.CI === "true";
+const chromiumExecutablePath =
+  process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH?.trim() || undefined;
 
 console.log(`[Playwright Config] Loading environment: ${envFile}`);
 console.log(
@@ -60,6 +62,11 @@ export default defineConfig({
       ],
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
+    // Ignite provisions Chromium in the workspace image; project tests must not download it.
+    launchOptions: chromiumExecutablePath
+      ? { executablePath: chromiumExecutablePath }
+      : undefined,
+
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: "on-first-retry",
 

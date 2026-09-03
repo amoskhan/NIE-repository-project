@@ -1,0 +1,72 @@
+# .understandignore - patterns for files/dirs to exclude from analysis.
+# Keep source, docs, and templates visible; exclude generated output, local
+# runtime state, agent skill symlinks, and credential-like files.
+
+# Dependencies and build output
+node_modules/
+.pnpm-store/
+dist/
+dist-ssr/
+lib/
+bin/
+obj/
+artifacts/
+coverage/
+test-results/
+playwright-report/
+reports/
+
+# Local runtime data
+build/pgdata/
+build/uploads/
+build/valkey-data/
+staging/pgdata/
+staging/uploads/
+src/backend/API/uploads/
+
+# Agent/tool state and generated graph scratch
+.git/
+.agents/
+.gemini/skills/
+.kiro/skills/
+.codegraph/
+.codex-runtime/
+.playwright-mcp/
+.understand-anything/intermediate/
+.understand-anything/tmp/
+.understand-anything/.trash-*/
+.understand-anything/diff-overlay.json
+.understand-anything/knowledge-graph.json
+.understand-anything/meta.json
+
+# Logs and binary assets
+*.log
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.ico
+*.woff
+*.woff2
+*.ttf
+*.eot
+*.mp3
+*.mp4
+*.zip
+*.tar
+*.gz
+*.pdf
+
+# Secrets and local environment files
+.env
+.env.*
+*.env
+*.env.*
+**/.env
+**/.env.*
+**/*.env
+**/*.env.*
+appsettings.Development.local.json
+appsettings.Production.local.json
+secrets.json
+**/secrets.json

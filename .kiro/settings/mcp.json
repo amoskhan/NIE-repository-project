@@ -1,0 +1,29 @@
+{
+  "mcpServers": {
+    "playwright": {
+      "command": "/opt/ignite/bin/mcp-playwright.sh"
+    },
+    "chrome-devtools": {
+      "command": "/opt/ignite/bin/mcp-chrome-devtools.sh"
+    },
+    "postgres": {
+      "command": "/opt/ignite/bin/mcp-postgres.sh"
+    },
+    "filesystem": {
+      "command": "mcp-server-filesystem",
+      "args": ["/home/coder/workspace/project"]
+    },
+    "context7": {
+      "command": "/opt/ignite/bin/mcp-context7.sh"
+    },
+    "codegraph": {
+      "command": "/opt/ignite/bin/mcp-codegraph.sh"
+    },
+    "memory": {
+      "command": "mcp-server-memory"
+    },
+    "sequential-thinking": {
+      "command": "mcp-server-sequential-thinking"
+    }
+  }
+}

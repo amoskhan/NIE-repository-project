@@ -1,0 +1,78 @@
+schema_version: "1.0"
+
+preset:
+  id: "nie-ignite"
+  name: "NIE Ignite"
+  version: "1.4.0"
+  description: "NIE's reviewed Spec Kit policy, artifacts, and execution safeguards."
+  author: "National Institute of Education"
+  repository: "https://niegithub.nie.edu.sg/NIE/nie-ignite"
+  license: "Proprietary"
+
+requires:
+  speckit_version: ">=0.15.2,<0.16.0"
+
+provides:
+  templates:
+    - type: "template"
+      name: "constitution-template"
+      file: "templates/constitution-template.md"
+      description: "Fixed NIE Ignite engineering constitution"
+      replaces: "constitution-template"
+
+    - type: "template"
+      name: "plan-template"
+      file: "templates/plan-addendum.md"
+      description: "NIE design artifact index"
+      strategy: "append"
+
+    - type: "command"
+      name: "speckit.specify"
+      file: "commands/speckit.specify.md"
+      description: "Add NIE specification requirements to native Specify"
+      strategy: "append"
+
+    - type: "command"
+      name: "speckit.plan"
+      file: "commands/speckit.plan.md"
+      description: "Add NIE architecture artifacts to native Plan"
+      strategy: "append"
+
+    - type: "command"
+      name: "speckit.tasks"
+      file: "commands/speckit.tasks.md"
+      description: "Add NIE task quality gates to native Tasks"
+      strategy: "append"
+
+    - type: "command"
+      name: "speckit.implement"
+      file: "commands/speckit.implement.md"
+      description: "Add NIE implementation safeguards"
+      strategy: "append"
+
+    - type: "command"
+      name: "speckit.nie-refine"
+      file: "commands/speckit.nie-refine.md"
+      description: "Refine the active feature using workspace files directly"
+
+    - type: "command"
+      name: "speckit.nie-screen"
+      file: "commands/speckit.nie-screen.md"
+      description: "Generate safe connected Vue-native or HTML review screens for the active feature"
+
+    - type: "command"
+      name: "speckit.nie-reconcile"
+      file: "commands/speckit.nie-reconcile.md"
+      description: "Reconcile phase feedback without rewriting completed task history"
+
+    - type: "command"
+      name: "speckit.nie-implement-task"
+      file: "commands/speckit.nie-implement-task.md"
+      description: "Implement exactly one native Spec Kit task"
+
+tags:
+  - "nie"
+  - "ignite"
+  - "dotnet"
+  - "vue"
+  - "governance"
