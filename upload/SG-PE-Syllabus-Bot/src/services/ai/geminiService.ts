@@ -960,9 +960,8 @@ The biomechanics report now provides SPECIFIC frame-level evidence. You MUST use
         throw new Error("Gemini API returned an empty response. This is usually due to Safety Filters or Quota Limits.");
       }
 
-      const response = result.response || result;
-      text = typeof response.text === 'function' ? response.text() :
-        (response.candidates?.[0]?.content?.parts?.[0]?.text || "");
+      const response = result;
+      text = response.text || response.candidates?.[0]?.content?.parts?.[0]?.text || "";
 
       groundingChunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks || [];
       tokenUsage = response.usageMetadata?.totalTokenCount || 0;

@@ -70,6 +70,12 @@ yarn dev       # Dev server at http://localhost:5173
 yarn build     # Production build → dist/
 yarn preview   # Preview production build
 ```
+
+## Ignite Live Build
+
+Ignite runs this frontend as `pe-feedback` on port `18100`. Its launcher installs strictly from `yarn.lock`, then starts Vite with the injected mount path, host allowlist, and HMR settings. Ordinary local development retains its relative `./` base path.
+
+The uploaded `.env.local` is intentionally not loaded by the Ignite configuration and no AI-provider key is emitted to the browser. The Vercel `api/` functions are not run by Vite; deploy them behind an approved backend or serverless runtime before enabling AI, data-sync, or document-upload workflows in a Live Build.
 ---
 
 ## Project Structure

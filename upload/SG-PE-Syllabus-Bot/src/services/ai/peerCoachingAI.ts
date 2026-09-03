@@ -142,7 +142,7 @@ Format: [praise]. [tip] [emoji]`
     {
       text: `You are an expert Singapore MOE PE assessor.
 Skill: ${skillName}. Performer: ${performer}. Peer observed: ${peerSummary}
-${frames.length > 0 ? "Movement frames shown above." : "No frames — use peer data only."}
+${frames.length > 0 ? "Movement frames shown above." : "No frames ; use peer data only."}
 
 MOE 2024 Criteria:
 ${criteriaList || "Standard FMS criteria."}

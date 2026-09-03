@@ -18,7 +18,7 @@ const CameraRecorder: React.FC<CameraRecorderProps> = ({ onVideoRecorded, onClos
     const mediaRecorderRef = useRef<MediaRecorder | null>(null);
     const chunksRef = useRef<Blob[]>([]);
     const timerRef = useRef<NodeJS.Timeout | null>(null);
-    const requestRef = useRef<number>();
+    const requestRef = useRef<number | undefined>(undefined);
     const frameCountRef = useRef<number>(0);
     const lastFpsTimeRef = useRef<number>(0);
 

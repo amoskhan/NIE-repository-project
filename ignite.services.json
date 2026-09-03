@@ -42,6 +42,25 @@
       "required": true
     },
     {
+      "id": "pe-feedback",
+      "displayName": "Aug1 AI-Assisted Feedback",
+      "kind": "frontend",
+      "workingDirectory": "upload/SG-PE-Syllabus-Bot",
+      "command": [
+        "node",
+        "scripts/ignite-dev.mjs",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "18100",
+        "--strictPort"
+      ],
+      "port": 18100,
+      "healthPath": "/",
+      "primary": false,
+      "required": true
+    },
+    {
       "id": "main-api",
       "displayName": "Main API",
       "kind": "backend",

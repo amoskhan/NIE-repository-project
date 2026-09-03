@@ -36,7 +36,7 @@ export const ClassQrScannerModal: React.FC<ClassQrScannerModalProps> = ({
       return;
     }
 
-    if (isSecure && navigator.mediaDevices?.getUserMedia) {
+    if (isSecure && typeof navigator.mediaDevices.getUserMedia === 'function') {
       startScanner();
     }
 

@@ -1513,6 +1513,10 @@ const App: React.FC = () => {
         );
       }
 
+      if (!response) {
+        throw new Error('The selected AI service returned no response.');
+      }
+
       // --- Auto-save Phase 2 analysis to Supabase (fire-and-forget) ---
       // Use proficiency level detection — not isVerifying — as the Phase 2 signal.
       // isVerifying is false when Target Skill is pre-filled (AI runs Phase 2 directly

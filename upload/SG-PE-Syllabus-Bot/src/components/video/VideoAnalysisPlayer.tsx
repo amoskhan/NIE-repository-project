@@ -11,7 +11,7 @@ interface VideoAnalysisPlayerProps {
 const VideoAnalysisPlayer: React.FC<VideoAnalysisPlayerProps> = ({ src, label }) => {
     const videoRef = useRef<HTMLVideoElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
-    const requestRef = useRef<number>();
+    const requestRef = useRef<number | undefined>(undefined);
     const [isPlaying, setIsPlaying] = useState(false);
     const [isLoaded, setIsLoaded] = useState(false);
     const [status, setStatus] = useState('Initializing...');
