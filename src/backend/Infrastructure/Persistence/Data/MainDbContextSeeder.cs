@@ -709,7 +709,7 @@ public static class MainDbContextSeeder
             })
             .ToList();
 
-    private static List<UserRole> GetDevelopmentUserRoleSeeds() =>
+    internal static List<UserRole> GetDevelopmentUserRoleSeeds() =>
     [
         new UserRole
         {
@@ -722,6 +722,13 @@ public static class MainDbContextSeeder
         {
             UserId = "kamaludemy",
             RoleId = SystemRoleIds.Administrator,
+            AssignedOn = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Unspecified),
+            IsActive = true
+        },
+        new UserRole
+        {
+            UserId = "NIE25",
+            RoleId = SystemRoleIds.User,
             AssignedOn = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Unspecified),
             IsActive = true
         }
