@@ -607,8 +607,9 @@ public static class MainDbContextSeeder
     {
         foreach (var seed in GetDevelopmentUserRoleSeeds())
         {
-            var existing = context.UserRoles.SingleOrDefault(userRole =>
-                userRole.UserId == seed.UserId && userRole.RoleId == seed.RoleId);
+            var matchingAssignments = context.UserRoles.Where(userRole =>
+                userRole.UserId.ToLower() == seed.UserId && userRole.RoleId == seed.RoleId).ToList();
+            var existing = matchingAssignments.FirstOrDefault();
 
             if (existing is null)
             {
@@ -616,10 +617,16 @@ public static class MainDbContextSeeder
                 continue;
             }
 
+            existing.UserId = seed.UserId;
             existing.AssignedOn = seed.AssignedOn;
             existing.AssignedBy = seed.AssignedBy;
             existing.ExpiresOn = seed.ExpiresOn;
             existing.IsActive = seed.IsActive;
+
+            foreach (var duplicate in matchingAssignments.Skip(1))
+            {
+                context.UserRoles.Remove(duplicate);
+            }
         }
 
         SaveIfChanged(context);
@@ -629,8 +636,10 @@ public static class MainDbContextSeeder
     {
         foreach (var seed in GetDevelopmentUserRoleSeeds())
         {
-            var existing = await context.UserRoles.SingleOrDefaultAsync(userRole =>
-                userRole.UserId == seed.UserId && userRole.RoleId == seed.RoleId, cancellationToken);
+            var matchingAssignments = await context.UserRoles.Where(userRole =>
+                userRole.UserId.ToLower() == seed.UserId && userRole.RoleId == seed.RoleId)
+                .ToListAsync(cancellationToken);
+            var existing = matchingAssignments.FirstOrDefault();
 
             if (existing is null)
             {
@@ -638,10 +647,16 @@ public static class MainDbContextSeeder
                 continue;
             }
 
+            existing.UserId = seed.UserId;
             existing.AssignedOn = seed.AssignedOn;
             existing.AssignedBy = seed.AssignedBy;
             existing.ExpiresOn = seed.ExpiresOn;
             existing.IsActive = seed.IsActive;
+
+            foreach (var duplicate in matchingAssignments.Skip(1))
+            {
+                context.UserRoles.Remove(duplicate);
+            }
         }
 
         await SaveIfChangedAsync(context, cancellationToken);
@@ -727,7 +742,7 @@ public static class MainDbContextSeeder
         },
         new UserRole
         {
-            UserId = "NIE25",
+            UserId = "nie25",
             RoleId = SystemRoleIds.User,
             AssignedOn = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Unspecified),
             IsActive = true

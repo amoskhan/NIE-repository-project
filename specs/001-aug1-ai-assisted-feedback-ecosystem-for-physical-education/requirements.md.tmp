@@ -7,7 +7,7 @@
 - Trigger/precondition: A visitor opens a product route or returns after signing in.
 - Required behavior: The product sends unauthenticated visitors to the authentication experience, validates the requested return route, and returns an authenticated visitor to that permitted route or their dashboard. Protected content is not shown before session validation.
 - Validation/failure outcome: Invalid or forbidden deep links show the appropriate safe status and a permitted recovery route; expired sessions require sign-in again.
-- Acceptance criteria: A valid deep link returns to its original route after sign-in; an invalid external return target is rejected; a denied route is not rendered.
+- Acceptance criteria: A valid deep link returns to its original route after sign-in; an invalid external return target is rejected; a denied route is not rendered; institutional user IDs resolve the same access assignment regardless of letter casing returned by the identity provider.
 
 ### FR-002 - View class groups
 - Actor/context: PE teacher or PE coordinator within one institution.

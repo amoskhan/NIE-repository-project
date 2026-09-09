@@ -10,7 +10,7 @@ public class DevelopmentAccessSeedTests
     {
         var assignment = Assert.Single(
             MainDbContextSeeder.GetDevelopmentUserRoleSeeds(),
-            seed => string.Equals(seed.UserId, "NIE25", StringComparison.Ordinal));
+            seed => string.Equals(seed.UserId, "nie25", StringComparison.Ordinal));
 
         Assert.Equal(SystemRoleIds.User, assignment.RoleId);
         Assert.True(assignment.IsActive);

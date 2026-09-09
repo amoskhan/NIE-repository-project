@@ -4,6 +4,7 @@ using Application.Contracts;
 using Application.Features.DataTable;
 using Application.Features.Email;
 using Application.Features.PushNotification;
+using Application.Security;
 using Domain.Models;
 using Mapster;
 using Microsoft.EntityFrameworkCore;
@@ -246,9 +247,10 @@ public class UserRoleService : IUserRoleService
     /// <inheritdoc />
     public async Task<Guid?> GetUserRoleByUsernameAsync(string username)
     {
+        var normalizedUserId = ExternalUserId.Normalize(username);
         var userRole = await _context.UserRoles
             .AsNoTracking()
-            .Where(ur => ur.UserId == username && ur.IsActive)
+            .Where(ur => ur.UserId.ToLower() == normalizedUserId && ur.IsActive)
             .OrderBy(ur => ur.Role.DisplayOrder)
             .FirstOrDefaultAsync();
 
@@ -258,10 +260,11 @@ public class UserRoleService : IUserRoleService
     /// <inheritdoc />
     public async Task<List<(Guid RoleId, string RoleName)>> GetActiveUserRolesAsync(string userId)
     {
+        var normalizedUserId = ExternalUserId.Normalize(userId);
         return await _context.UserRoles
             .AsNoTracking()
             .Include(ur => ur.Role)
-            .Where(ur => ur.UserId == userId && ur.IsActive)
+            .Where(ur => ur.UserId.ToLower() == normalizedUserId && ur.IsActive)
             .Where(ur => ur.ExpiresOn == null || ur.ExpiresOn > BuildingBlocks.Helpers.DateTimeHelper.Now)
             .Select(ur => new ValueTuple<Guid, string>(ur.RoleId, ur.Role.Name))
             .ToListAsync();
@@ -283,10 +286,11 @@ public class UserRoleService : IUserRoleService
     /// <inheritdoc />
     public async Task<List<UserRoleDto>> GetUserRolesAsync(string userId)
     {
+        var normalizedUserId = ExternalUserId.Normalize(userId);
         return await _context.UserRoles
             .AsNoTracking()
             .Include(ur => ur.Role)
-            .Where(ur => ur.UserId == userId)
+            .Where(ur => ur.UserId.ToLower() == normalizedUserId)
             .Select(ur => new UserRoleDto
             {
                 Id = ur.Id,
@@ -340,7 +344,7 @@ public class UserRoleService : IUserRoleService
     /// <inheritdoc />
     public async Task<List<UserRoleDto>> AssignRolesAsync(AssignAccessDto dto)
     {
-        var userId = (dto.UserId ?? string.Empty).Trim().ToLowerInvariant();
+        var userId = ExternalUserId.Normalize(dto.UserId);
         var roleIds = dto.RoleIds.Distinct().ToList();
         var validRoleCount = await _context.Roles.CountAsync(role => roleIds.Contains(role.Id) && role.IsActive);
         if (validRoleCount != roleIds.Count)
@@ -349,17 +353,28 @@ public class UserRoleService : IUserRoleService
         }
 
         var existingAssignments = await _context.UserRoles
-            .Where(item => item.UserId == userId && roleIds.Contains(item.RoleId))
-            .ToDictionaryAsync(item => item.RoleId);
+            .Where(item => item.UserId.ToLower() == userId && roleIds.Contains(item.RoleId))
+            .ToListAsync();
 
         foreach (var roleId in roleIds)
         {
-            if (existingAssignments.TryGetValue(roleId, out var existing))
+            var matchingAssignments = existingAssignments
+                .Where(item => item.RoleId == roleId)
+                .ToList();
+            var existing = matchingAssignments.FirstOrDefault();
+            if (existing is not null)
             {
+                existing.UserId = userId;
                 existing.IsActive = true;
                 existing.ExpiresOn = dto.ExpiresOn;
                 existing.AssignedOn = BuildingBlocks.Helpers.DateTimeHelper.Now;
                 existing.AssignedBy = _userContextService.UserId;
+
+                foreach (var duplicate in matchingAssignments.Skip(1))
+                {
+                    _context.UserRoles.Remove(duplicate);
+                }
+
                 continue;
             }
 
@@ -380,7 +395,7 @@ public class UserRoleService : IUserRoleService
         return await _context.UserRoles
             .AsNoTracking()
             .Include(item => item.Role)
-            .Where(item => item.UserId == userId && roleIds.Contains(item.RoleId))
+            .Where(item => item.UserId.ToLower() == userId && roleIds.Contains(item.RoleId))
             .OrderBy(item => item.Role.DisplayOrder)
             .Select(item => new UserRoleDto
             {
@@ -400,15 +415,21 @@ public class UserRoleService : IUserRoleService
     /// <inheritdoc />
     public async Task<bool> RemoveRoleAsync(string userId, Guid roleId)
     {
-        var userRole = await _context.UserRoles
-            .FirstOrDefaultAsync(ur => ur.UserId == userId && ur.RoleId == roleId);
+        var normalizedUserId = ExternalUserId.Normalize(userId);
+        var userRoles = await _context.UserRoles
+            .Where(ur => ur.UserId.ToLower() == normalizedUserId && ur.RoleId == roleId)
+            .ToListAsync();
 
-        if (userRole == null)
+        if (userRoles.Count == 0)
             return false;
 
-        _context.UserRoles.Remove(userRole);
+        foreach (var userRole in userRoles)
+        {
+            _context.UserRoles.Remove(userRole);
+        }
+
         await _context.SaveChangesAsync();
-        await _accessFunctionService.InvalidateUsersAsync(new[] { userId });
+        await _accessFunctionService.InvalidateUsersAsync([normalizedUserId]);
 
         return true;
     }

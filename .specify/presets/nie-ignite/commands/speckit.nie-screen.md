@@ -159,9 +159,22 @@ $ARGUMENTS
    registrations.
    A narrowly necessary traceability correction to an affected
    specification section remains allowed. Preserve everything else byte-for-byte.
-3. When present, inspect `temp/nie-template/` and `temp/project-template/` only
-   as pinned, read-only design and structure references. The active
-   specification wins. Do not edit, run, test, or commit either reference tree.
+3. Before removing sample source, run
+   `python3 /opt/ignite/bin/prepare-screen-context.py .`. Read the complete
+   active feature's `ui/reference-patterns.md`, then
+   `temp/nie-template/SCREEN-PATTERNS.md` and the concrete source patterns it
+   selects. The pinned reference manifest preserves their provenance and hash
+   across regeneration. Missing or changed references fail generation; never
+   skip this context or replace it with a generic instruction to make the UI
+   beautiful. `temp/project-template/`, when present, is an additional project
+   reference. Keep both trees read-only and uncommitted; never run their apps.
+   The active specification owns the domain and overrides reference examples.
+   Before writing a screen, record its short layout brief in `ui/screens.md`:
+   user outcome, information priority, primary action, recipe/reference path,
+   grouping/spacing, realistic data and state/interaction coverage. Reuse the
+   actual form/table/detail/approval composition; a board needs equal lane
+   geometry, aligned metadata, distinct records and consistent counts, not
+   one repeated placeholder. Do not add procurement destinations to the product.
 4. Maintain this workspace-authoritative contract. Use the Vue-native form
    whenever an existing Vue 3/Vite app and its shared NIE component package are
    available, across POC, Standard, and Enterprise projects. An NIE template
@@ -322,6 +335,13 @@ $ARGUMENTS
    router provides the injection context required by the actual
    `StaffLayout.vue` and `LoginPage.vue`; do not install production guards,
    authentication, telemetry, stores, or API plugins in the preview bootstrap.
+   Import `./ignite-preview-runtime` before mounting. The verification tool
+   installs this platform-owned module to initialize the actual NIE package
+   styles, application styles and configured theme; never hand-copy palette
+   colors or suppress its profile-theme bridge. Declare this runtime module
+   in `sourcePaths`. Profile palette and light/dark changes must affect all
+   product surfaces through semantic tokens, including selected controls,
+   fields, status treatment and dialogs.
 
    The preview composition is mandatory, not a colour reference. Import and
    render the workspace's actual template-owned
@@ -378,6 +398,28 @@ $ARGUMENTS
    `data-preview-capabilities`. These attributes are deterministic preview
    verification metadata only; they do not grant access and must be derived
    from the same actor profile that drives the visible shell and controls.
+   Read `igniteState` from the hash query (default `default`), render that
+   deterministic state through the same production visual, and expose it as
+   `data-preview-state` on the same canonical root. Each manifest screen
+   declares `layoutRecipe` (`table`, `form`, `detail`, `approval`, `dashboard`,
+   `board`, `auth`, or justified `custom`), `previewStates` including `default`
+   and relevant loading/empty/error/denied/validation/success states, and
+   `qualityChecks`. Each quality check names `name`, `state`, `action` (`click`
+   or `fill`), one app-local `selector`, optional synthetic `value`,
+   `expectSelector`, `expect` (`visible`, `hidden`, `text`) and optional `text`.
+   Cover the principal local interaction and state result. An empty check list
+   is acceptable only for a passive read-only screen. Do not call real APIs.
+   Render repeatable records with distinct `data-preview-record-id` values.
+   Count-bearing containers declare `data-preview-total`; when intentionally
+   paginated also declare `data-preview-paginated="true"`. Boards declare
+   `data-preview-column` per lane and render at least two distinct records in
+   the default fixture. Derive badges from the fixtures; never repeat one
+   record across lanes or claim a visible count that disagrees with the data.
+   Mark deliberate alignment groups with `data-preview-align="left"`, `"top"`
+   or `"center-y"` and their direct items with `data-preview-align-item`.
+   Use groups that remain valid at the selected responsive layout (derive the
+   axis with that layout when necessary). This lets verification detect a
+   displaced lane header or form column instead of accepting any nonblank page.
 
    Include the actual `StaffLayout.vue`,
    `LoginPage.vue`, `navigation.ts`, route registry, design adapter,
@@ -390,7 +432,16 @@ $ARGUMENTS
    declared screen id must resolve to the root visual in the design adapter's
    `<component :is>` expression, and the declared named router record must
    resolve to the exact live route/page and literal shared-page `screenId` prop.
-   Run the existing frontend typecheck/build, then open every `previewPath` and
+   Run `node /opt/ignite/bin/verify-screen-previews.mjs specs/<feature>/ui/screens/manifest.json`.
+   The platform installs its preview runtime, typechecks/builds, checks every
+   screen/actor/state at desktop/tablet/phone widths and representative layouts
+   across profile themes. It writes the source-bound `quality-report.json`
+   and bounded immutable screenshots under `ui/screens/evidence/`. Inspect
+   the actual rendered screenshots against the selected pattern for hierarchy,
+   alignment, believable content and theme coherence; a passing DOM check alone
+   does not prove visual quality. Repair reported failures and rerun the tool.
+   Never author, edit or fabricate its report or image evidence yourself.
+   Then open every `previewPath` and
    every declared interactive screen/actor pairing in a real browser at desktop
    and 390-pixel phone widths. Require a nonblank `#app`, exactly one canonical
    staff or login shell, the actor's expected navigation and command visibility,
