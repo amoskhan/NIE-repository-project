@@ -2,9 +2,9 @@
   "schema_version": "1.0",
   "presets": {
     "nie-ignite": {
-      "version": "1.4.0",
+      "version": "1.6.3",
       "source": "local",
-      "manifest_hash": "sha256:f61eff3afbca762a6a75933d0d11cf5e2bea064ed2be52af1ccf28094b50e40b",
+      "manifest_hash": "sha256:f8e1f1a79db62eb7c58958799febbd2af34a66bc0fdb6fbfd847ef8a74fb9ad0",
       "enabled": true,
       "priority": 5,
       "registered_commands": {
@@ -31,7 +31,7 @@
           "speckit-nie-implement-task"
         ]
       },
-      "installed_at": "2026-09-07T05:19:41.287387+00:00"
+      "installed_at": "2026-09-24T01:44:07.576548+00:00"
     }
   }
 }

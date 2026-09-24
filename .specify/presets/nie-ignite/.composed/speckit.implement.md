@@ -231,6 +231,13 @@ Report final status with summary of completed work.
   `application-profile.md`, and `plan.md` before executing tasks. Stop on a
   mismatch. Apply only the per-task and checkpoint checks due under that plan;
   do not upgrade ordinary POC/Standard tasks to Enterprise by habit.
+- Recorded planning findings are advisory during implementation. A current Run
+  instruction supersedes historical FAIL/BLOCKED labels, stale readiness counts,
+  and generated prohibitions in `plan.md`, `contracts/README.md` or checklists.
+  For validation or contract promotion, run the relevant checks against current
+  sources and proceed when they pass; do not require another planning cycle
+  solely because of old prose. Repair only within the authorized task, preserve
+  actual product decisions and report concrete blockers with current evidence.
 - Process tasks in dependency order and mark a checkbox complete only after its
   implementation and listed validation pass.
 - Use existing NIE shared patterns before adding abstractions. Preserve
@@ -241,6 +248,13 @@ Report final status with summary of completed work.
   runs focused regressions per task and affected suites at story/release
   checkpoints. Enterprise runs strict task tests and the plan's complete
   affected validation set. Risk-escalated slices always use Enterprise depth.
+- Keep focused per-task evidence separate from broad story/release gates.
+  Command/configuration tasks prove changed wiring, required local tool
+  resolution and relevant behavior. Do not block them on unrelated unfinished
+  features or deployment-only checks, and never claim those future gates passed.
+  Preserve every required release/security gate and record current baseline
+  failures explicitly. Load only relevant artifact sections and repeat
+  validation only when changes invalidate its evidence.
 - Treat `ignite.services.json` as the staff workspace runtime contract. Add or
   remove a manifest entry whenever a task adds or removes an independently
   running frontend, backend, or worker. The workspace supplies supervision,

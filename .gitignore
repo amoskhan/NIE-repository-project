@@ -46,6 +46,7 @@ _ReSharper*/
 # Build output
 [Bb]in/
 [Oo]bj/
+.dotnet/
 [Ll]og/
 [Ll]ogs/
 [Dd]ebug/

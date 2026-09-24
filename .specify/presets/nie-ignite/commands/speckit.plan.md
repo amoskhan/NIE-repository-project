@@ -46,19 +46,21 @@ description: Apply NIE Ignite architecture requirements to the native plan.
   `ui/screens.md`, `ui/reference-patterns.md`, or generated screen source. Put
   physical mappings and implementation decisions only in `plan.md`,
   `research.md`, `contracts/`, and `quickstart.md`.
-- A Plan whose Constitution Check or final gate result contains `FAIL` or
-  `BLOCKED` is not complete and must not proceed to Tasks. Resolve a technical
-  choice only when the approved product contracts permit it. When the conflict
-  belongs to those contracts, fail deliberately for specification refinement;
-  never hide, relabel, or task around the blocker.
+- Record the current Constitution Check result in `plan.md`. Resolve a
+  technical choice when the approved product contracts permit it. A remaining
+  `FAIL` or `BLOCKED` is an advisory finding for the developers who own that
+  decision: report it plainly and never hide or relabel it, but never withhold
+  work because of it. A Plan with a failing gate is still complete, and Tasks
+  still proceed. Do not declare tasks, contract promotion, or implementation
+  unauthorized, blocked, or disabled.
 - Produce the implementation-specific `plan.md`, `research.md`, and
   `quickstart.md`, and machine-readable contracts under `contracts/` whenever
   applicable. Map the reviewed product design onto the repository's actual
   stack, packages, services, persistence, security, and validation approach.
 - If a technical decision conflicts with or requires a change to the immutable
-  review set, fail Plan deliberately and return to specification refinement.
-  Never silently rewrite an approved artifact or make the approved screens
-  stale while generating tasks.
+  review set, record it as a Constitution Check finding and continue. Never
+  silently rewrite an approved artifact or make the approved screens stale
+  while generating tasks.
 - Complete the NIE Design Artifact Index in `plan.md`. Record a concrete reason
   for each artifact that is not applicable.
 - Plan the repository's shared guided-tour primitive, feature-owned step

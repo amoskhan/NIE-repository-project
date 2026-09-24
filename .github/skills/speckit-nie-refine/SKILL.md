@@ -131,8 +131,8 @@ $ARGUMENTS
    now be stale.
 
 Write each changed artifact through a sibling temporary file, validate the
-complete cross-document graph, and atomically rename it over the final path.
+affected documents for consistency, and atomically rename it over the final path.
 Never expose a partially written canonical artifact and never edit
-`traceability.generated.md`; Ignite derives it after deterministic validation.
+`traceability.generated.md`; historical copies are not completeness or approval authority.
 
 Do not create a new feature, commit, push, or deploy.

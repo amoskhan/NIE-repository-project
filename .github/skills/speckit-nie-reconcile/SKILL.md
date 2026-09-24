@@ -63,11 +63,12 @@ $ARGUMENTS
    screens and pending tasks for the superseded pattern. Apply the decision to
    every affected unstarted artifact while preserving stable screen ids and
    unaffected screen files.
-6. `tasks.md` is auditable history. Preserve every completed checkbox, task id,
-   wording, ordering, traceability, and completion evidence byte-for-byte. Do
-   not edit a completed task to make it appear retroactively compliant. Add a
+6. `tasks.md` retains completed progress. Preserve completed checkboxes, task IDs
+   and evidence. Wording, paths, phases, ordering and traceability may be
+   corrected without blocking continuation or replaying finished work. Do not
+   demand the exact old wording or claim that a new requirement is implemented. Add a
    corrective pending task when completed work needs follow-up. Only pending or
-   unstarted future tasks may be updated, superseded, or regenerated; preserve
+   unstarted future work may gain new implementation requirements; preserve
    a stable id when its purpose remains the same.
 7. Keep tasks vertically integrated and testable. Every changed or new pending
    task must identify its phase and trace to requirements, workflows, screens,

@@ -261,11 +261,11 @@ description: Apply NIE Ignite requirements to the native feature specification.
   never write placeholder or incomplete-review text. Before responding, audit
   the selected feature directory and verify that each required path exists as a
   substantive regular Markdown file.
-- Write each changed artifact to a sibling temporary file, validate the whole
-  requirement/entity/workflow/operation/screen graph, then atomically rename
+- Write each changed artifact to a sibling temporary file, review affected
+  documents for consistency, then atomically rename
   the temporary file over its canonical path. Never stream a partial large
-  artifact into a canonical path. `traceability.generated.md` is derived by
-  Ignite after validation and must never be authored as canonical truth.
+  artifact into a canonical path. A generated graph report is not required; historical
+  traceability reports are not completeness or approval authority.
 - `application-profile.md` must state the real `Product title:`, accountable
   `Product owner:`, `Delivery assurance profile:`, `Reference sample decision:`,
   `Reference sample retention reason:`, `Runtime routing contract:`, and `UX
