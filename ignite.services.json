@@ -1,19 +1,15 @@
 {
-  "$schema": "./docs/ignite.services.schema.json",
   "version": 1,
-  "template": "nie-template",
+  "template": "nie-template-legacy-layout",
   "services": [
     {
       "id": "preview-main",
       "displayName": "Main application",
       "kind": "frontend",
-      "workingDirectory": "src/frontend",
+      "workingDirectory": "src/frontend/main",
       "command": [
-        "pnpm",
-        "--filter",
-        "@nie/main",
-        "exec",
-        "vite",
+        "node",
+        "./node_modules/vite/bin/vite.js",
         "--mode",
         "development"
       ],
@@ -26,13 +22,10 @@
       "id": "preview-auth",
       "displayName": "Authentication application",
       "kind": "frontend",
-      "workingDirectory": "src/frontend",
+      "workingDirectory": "src/frontend/auth",
       "command": [
-        "pnpm",
-        "--filter",
-        "@nie/auth",
-        "exec",
-        "vite",
+        "node",
+        "./node_modules/vite/bin/vite.js",
         "--mode",
         "development"
       ],
@@ -45,8 +38,8 @@
       "id": "main-api",
       "displayName": "Main API",
       "kind": "backend",
-      "project": "src/backend/Hosts/Api/Api.csproj",
-      "assembly": "Api",
+      "project": "src/backend/API/API.csproj",
+      "assembly": "API",
       "port": 15002,
       "healthPath": "/health/live",
       "required": true
@@ -55,7 +48,7 @@
       "id": "auth-api",
       "displayName": "Authentication API",
       "kind": "backend",
-      "project": "src/backend/Hosts/Auth/Auth.csproj",
+      "project": "src/backend/Auth/Auth.csproj",
       "assembly": "Auth",
       "port": 15001,
       "healthPath": "/health/live",

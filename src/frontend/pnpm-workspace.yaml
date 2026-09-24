@@ -1,6 +1,0 @@
-packages:
-  - "packages/ui"
-  - "packages/platform"
-  - "packages/contracts"
-  - "apps/auth"
-  - "apps/main"

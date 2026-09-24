@@ -1,3 +1,0 @@
-npx lint-staged --concurrent false --max-arg-length 1000000
-pnpm --dir src/frontend lint
-dotnet build src/backend/Backend.sln -c Release -warnaserror --nologo
