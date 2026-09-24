@@ -1,57 +1,23 @@
 {
   "version": 1,
-  "template": "nie-template-legacy-layout",
+  "template": "nie-template-current-layout",
   "services": [
     {
-      "id": "preview-main",
-      "displayName": "Main application",
+      "id": "pe-chatbot-web",
+      "displayName": "PE Syllabus chatbot",
       "kind": "frontend",
-      "workingDirectory": "src/frontend/main",
+      "workingDirectory": "src/frontend/apps/main",
       "command": [
         "node",
         "./node_modules/vite/bin/vite.js",
         "--mode",
-        "development"
+        "development",
+        "--host",
+        "0.0.0.0"
       ],
-      "port": 18002,
+      "port": 18100,
       "healthPath": "/",
       "primary": true,
-      "required": true
-    },
-    {
-      "id": "preview-auth",
-      "displayName": "Authentication application",
-      "kind": "frontend",
-      "workingDirectory": "src/frontend/auth",
-      "command": [
-        "node",
-        "./node_modules/vite/bin/vite.js",
-        "--mode",
-        "development"
-      ],
-      "port": 18001,
-      "healthPath": "/",
-      "primary": false,
-      "required": true
-    },
-    {
-      "id": "main-api",
-      "displayName": "Main API",
-      "kind": "backend",
-      "project": "src/backend/API/API.csproj",
-      "assembly": "API",
-      "port": 15002,
-      "healthPath": "/health/live",
-      "required": true
-    },
-    {
-      "id": "auth-api",
-      "displayName": "Authentication API",
-      "kind": "backend",
-      "project": "src/backend/Auth/Auth.csproj",
-      "assembly": "Auth",
-      "port": 15001,
-      "healthPath": "/health/live",
       "required": true
     }
   ]
