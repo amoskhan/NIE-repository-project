@@ -1,6 +1,5 @@
 using Application.Abstractions;
 using Application.Contracts;
-using Application.Security;
 using BuildingBlocks.Helpers;
 using Domain.Models;
 using Microsoft.EntityFrameworkCore;
@@ -79,32 +78,21 @@ public sealed class ApplicationAccessService : IApplicationAccessService
 
         var existing = await _context.ApplicationAccesses
             .Where(item =>
-                item.UserId.ToLower() == userId &&
+                item.UserId == userId &&
                 applicationIds.Contains(item.ApplicationId) &&
                 roleIds.Contains(item.RoleId))
-            .ToListAsync();
+            .ToDictionaryAsync(item => (item.ApplicationId, item.RoleId));
 
         foreach (var applicationId in applicationIds)
         {
             foreach (var roleId in roleIds)
             {
-                var matchingAssignments = existing
-                    .Where(item => item.ApplicationId == applicationId && item.RoleId == roleId)
-                    .ToList();
-                var assignment = matchingAssignments.FirstOrDefault();
-                if (assignment is not null)
+                if (existing.TryGetValue((applicationId, roleId), out var assignment))
                 {
-                    assignment.UserId = userId;
                     assignment.IsActive = true;
                     assignment.ExpiresOn = dto.ExpiresOn;
                     assignment.AssignedOn = DateTimeHelper.Now;
                     assignment.AssignedBy = assignedBy;
-
-                    foreach (var duplicate in matchingAssignments.Skip(1))
-                    {
-                        _context.ApplicationAccesses.Remove(duplicate);
-                    }
-
                     continue;
                 }
 
@@ -126,7 +114,7 @@ public sealed class ApplicationAccessService : IApplicationAccessService
 
         return (await AssignmentQuery()
             .Where(item =>
-                item.UserId.ToLower() == userId &&
+                item.UserId == userId &&
                 applicationIds.Contains(item.ApplicationId) &&
                 roleIds.Contains(item.RoleId))
             .OrderBy(item => item.Application.Name)
@@ -138,27 +126,15 @@ public sealed class ApplicationAccessService : IApplicationAccessService
 
     public async Task<bool> RemoveAsync(Guid id)
     {
-        var assignment = await _context.ApplicationAccesses
-            .FirstOrDefaultAsync(item => item.Id == id);
+        var assignment = await _context.ApplicationAccesses.FindAsync(id);
         if (assignment is null)
         {
             return false;
         }
 
-        var normalizedUserId = NormalizeUserId(assignment.UserId);
-        var equivalentAssignments = await _context.ApplicationAccesses
-            .Where(item =>
-                item.UserId.ToLower() == normalizedUserId &&
-                item.ApplicationId == assignment.ApplicationId &&
-                item.RoleId == assignment.RoleId)
-            .ToListAsync();
-        foreach (var equivalentAssignment in equivalentAssignments)
-        {
-            _context.ApplicationAccesses.Remove(equivalentAssignment);
-        }
-
+        _context.ApplicationAccesses.Remove(assignment);
         await _context.SaveChangesAsync();
-        await _accessFunctionService.InvalidateUsersAsync([normalizedUserId]);
+        await _accessFunctionService.InvalidateUsersAsync([assignment.UserId]);
         return true;
     }
 
@@ -169,7 +145,7 @@ public sealed class ApplicationAccessService : IApplicationAccessService
         var hasGlobalRole = await _context.UserRoles
             .AsNoTracking()
             .AnyAsync(item =>
-                item.UserId.ToLower() == normalizedUserId &&
+                item.UserId == normalizedUserId &&
                 item.IsActive &&
                 item.Role.IsActive &&
                 (item.ExpiresOn == null || item.ExpiresOn > now));
@@ -187,7 +163,7 @@ public sealed class ApplicationAccessService : IApplicationAccessService
         return await _context.ApplicationAccesses
             .AsNoTracking()
             .Where(item =>
-                item.UserId.ToLower() == normalizedUserId &&
+                item.UserId == normalizedUserId &&
                 item.IsActive &&
                 item.Application.IsActive &&
                 item.Role.IsActive &&
@@ -203,13 +179,10 @@ public sealed class ApplicationAccessService : IApplicationAccessService
             .Include(item => item.Application)
             .Include(item => item.Role);
 
-    private static string NormalizeUserId(string userId)
-    {
-        var normalizedUserId = ExternalUserId.Normalize(userId);
-        return normalizedUserId.Length == 0
+    private static string NormalizeUserId(string userId) =>
+        string.IsNullOrWhiteSpace(userId)
             ? throw new InvalidOperationException("User ID is required.")
-            : normalizedUserId;
-    }
+            : userId.Trim().ToLowerInvariant();
 
     private static ApplicationAccessDto ToDto(ApplicationAccess assignment) => new()
     {

@@ -1,7 +1,6 @@
 using System.Text.Json;
 using Application.Abstractions;
 using Application.Contracts;
-using Application.Security;
 using Domain.Enums;
 using Mapster;
 using Microsoft.EntityFrameworkCore;
@@ -16,8 +15,7 @@ public class AccessFunctionService : IAccessFunctionService
 {
     private readonly IApplicationDbContext _context;
     private readonly IDistributedCache? _cache;
-    private const string UserAccessCachePrefix = "user_access_functions_v2_";
-    private const string LegacyUserAccessCachePrefix = "user_access_functions_";
+    private const string UserAccessCachePrefix = "user_access_functions_";
 
     public AccessFunctionService(IApplicationDbContext context, IDistributedCache? cache = null)
     {
@@ -47,8 +45,7 @@ public class AccessFunctionService : IAccessFunctionService
     /// <inheritdoc />
     public async Task<List<string>> GetUserAccessFunctionCodesAsync(string userId)
     {
-        var normalizedUserId = ExternalUserId.Normalize(userId);
-        var cacheKey = $"{UserAccessCachePrefix}{normalizedUserId}";
+        var cacheKey = $"{UserAccessCachePrefix}{userId}";
 
         if (_cache != null)
         {
@@ -56,7 +53,7 @@ public class AccessFunctionService : IAccessFunctionService
             if (!string.IsNullOrWhiteSpace(cached))
             {
                 var codes = JsonSerializer.Deserialize<List<string>>(cached);
-                if (codes is { Count: > 0 })
+                if (codes != null)
                 {
                     return codes;
                 }
@@ -64,18 +61,10 @@ public class AccessFunctionService : IAccessFunctionService
         }
 
         var now = BuildingBlocks.Helpers.DateTimeHelper.Now;
-        var activeAssignments = _context.UserRoles
+        var codesFromDb = await _context.UserRoles
             .AsNoTracking()
-            .Where(userRole =>
-                userRole.UserId.ToLower() == normalizedUserId &&
-                userRole.IsActive &&
-                userRole.Role.IsActive)
-            .Where(userRole => userRole.ExpiresOn == null || userRole.ExpiresOn > now);
-        var assignmentExpirations = await activeAssignments
-            .Where(userRole => userRole.ExpiresOn != null)
-            .Select(userRole => userRole.ExpiresOn!.Value)
-            .ToListAsync();
-        var codesFromDb = await activeAssignments
+            .Where(userRole => userRole.UserId == userId && userRole.IsActive)
+            .Where(userRole => userRole.ExpiresOn == null || userRole.ExpiresOn > now)
             .SelectMany(userRole => userRole.Role.RoleAccessFunctions)
             .Where(link => link.AccessFunction.IsActive)
             .Select(link => link.AccessFunction.Code)
@@ -83,29 +72,14 @@ public class AccessFunctionService : IAccessFunctionService
             .OrderBy(code => code)
             .ToListAsync();
 
-        if (_cache != null && codesFromDb.Count > 0)
+        if (_cache != null)
         {
-            var cacheLifetime = TimeSpan.FromMinutes(15);
-            if (assignmentExpirations.Count > 0)
-            {
-                var timeUntilFirstExpiry = assignmentExpirations.Min() - now;
-                if (timeUntilFirstExpiry < cacheLifetime)
-                {
-                    cacheLifetime = timeUntilFirstExpiry;
-                }
-            }
-
-            if (cacheLifetime <= TimeSpan.Zero)
-            {
-                return codesFromDb;
-            }
-
             await _cache.SetStringAsync(
                 cacheKey,
                 JsonSerializer.Serialize(codesFromDb),
                 new DistributedCacheEntryOptions
                 {
-                    AbsoluteExpirationRelativeToNow = cacheLifetime
+                    AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(15)
                 });
         }
 
@@ -129,9 +103,7 @@ public class AccessFunctionService : IAccessFunctionService
 
         foreach (var userId in userIds.Distinct(StringComparer.OrdinalIgnoreCase))
         {
-            var normalizedUserId = ExternalUserId.Normalize(userId);
-            await _cache.RemoveAsync($"{UserAccessCachePrefix}{normalizedUserId}");
-            await _cache.RemoveAsync($"{LegacyUserAccessCachePrefix}{normalizedUserId}");
+            await _cache.RemoveAsync($"{UserAccessCachePrefix}{userId}");
         }
     }
 }

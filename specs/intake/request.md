@@ -5,4 +5,4 @@ Feature: Core application
 
 ## Latest request
 
-what do you do
+No active product feature request. Begin the next feature through the specification workflow.
