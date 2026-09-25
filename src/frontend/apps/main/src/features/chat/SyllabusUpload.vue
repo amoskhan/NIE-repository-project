@@ -9,6 +9,7 @@ defineProps<{
 }>();
 
 const emit = defineEmits<{
+  loadProject: [];
   remove: [];
   upload: [file: File];
 }>();
@@ -30,15 +31,26 @@ function handleFileChange(event: Event): void {
     <div class="source-copy">
       <p id="source-title" class="source-title">2024 PE Syllabus</p>
       <p v-if="!source" class="source-description">
-        Upload the school-approved PDF to search and cite it in this browser session.
+        {{ isProcessing ? "Loading syllabus text…" : "Use the project syllabus or choose a different PDF." }}
       </p>
       <p v-else class="source-description">
         <span class="source-file">{{ source.fileName }}</span> · {{ source.pageCount }}
         {{ source.pageCount === 1 ? "page" : "pages" }} ready
       </p>
+      <p v-if="source" class="source-description">
+        {{ source.origin === "project" ? "Loaded from project files." : "Using your selected PDF for this session." }}
+        The project syllabus loads again when you refresh.
+      </p>
     </div>
 
     <div class="source-actions">
+      <button
+        v-if="source?.origin !== 'project'"
+        class="remove-button"
+        type="button"
+        :disabled="isProcessing"
+        @click="emit('loadProject')"
+      >Use project syllabus</button>
       <label class="upload-button" :class="{ 'upload-button--busy': isProcessing }">
         <input
           class="visually-hidden"
@@ -119,6 +131,7 @@ function handleFileChange(event: Event): void {
 
 .source-actions {
   display: flex;
+  flex-wrap: wrap;
   flex: 0 0 auto;
   gap: 0.5rem;
 }

@@ -12,10 +12,11 @@ const prompts = [
   "Where can I find FMS guidance?",
 ];
 
-const { error, isProcessing, progressLabel, removeSyllabus, source, uploadSyllabus } = useSyllabusSource();
+const { error, isProcessing, progressLabel, loadProjectSyllabus, removeSyllabus, source, uploadSyllabus } = useSyllabusSource();
 const { messageCountLabel, messages, sendMessage } = useChat(source);
 
 function askPrompt(prompt: string): void {
+  if (isProcessing.value) return;
   sendMessage(prompt);
 }
 </script>
@@ -28,10 +29,10 @@ function askPrompt(prompt: string): void {
       <div class="intro">
         <p id="chat-title" class="intro-title">Find grounded PE syllabus guidance</p>
         <p v-if="source" class="intro-copy">
-          Answers quote the uploaded PDF and show the matching page reference.
+          Search the loaded syllabus for excerpts with PDF page references.
         </p>
         <p v-else class="intro-copy">
-          Upload the school-approved 2024 syllabus PDF to receive cited excerpts.
+          The 2024 syllabus from your project files loads automatically. You can also choose a different PDF.
         </p>
       </div>
 
@@ -40,6 +41,7 @@ function askPrompt(prompt: string): void {
         :is-processing="isProcessing"
         :progress-label="progressLabel"
         :source="source"
+        @load-project="loadProjectSyllabus"
         @remove="removeSyllabus"
         @upload="uploadSyllabus"
       />
@@ -52,6 +54,7 @@ function askPrompt(prompt: string): void {
             :key="prompt"
             class="prompt-button"
             type="button"
+            :disabled="isProcessing"
             @click="askPrompt(prompt)"
           >
             {{ prompt }}
@@ -61,7 +64,7 @@ function askPrompt(prompt: string): void {
 
       <ChatMessageList :messages="messages" />
       <p class="message-count">{{ messageCountLabel }}</p>
-      <ChatComposer @send="sendMessage" />
+      <ChatComposer :disabled="isProcessing" @send="askPrompt" />
     </section>
   </main>
 </template>

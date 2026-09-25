@@ -7,7 +7,17 @@
 
 ## Current Prototype Boundary
 
-The current implementation provides a local, browser-only syllabus-chat interface. An educator can upload a text-based PDF of the approved 2024 syllabus; its text is read only in the current browser session and can be replaced or removed. The chat returns matching excerpts with PDF page references, or clearly states when no matching passage is found. It does not call an AI provider, store conversations or uploaded PDFs, upload video, or present generated curriculum guidance as verified content.
+The current implementation provides a browser-only syllabus-chat interface. On opening or refreshing the app, it automatically loads `upload/2024 Physical Education Primary Secondary and PreUniversity Syllabus (1).pdf` from the project as its default source. This specific PDF is included as an application asset; other project uploads are not exposed. The browser extracts its text and the chat returns matching excerpts with PDF page references, or states when no matching passage is found. Question submission is disabled while a document is loading.
+
+An educator can replace the active source with a text-based PDF for the current session, remove the active source, or select **Use project syllabus** to restore it or retry a failed load. Removing a source does not delete the project file; refreshing loads the project syllabus again. Previously displayed chat messages keep their original source references. Local replacement PDFs and conversations are not persisted or sent to a server. The app does not call an AI provider, upload video, or present generated curriculum guidance as verified content.
+
+### Project syllabus acceptance checks
+
+- Opening or refreshing the chatbot automatically loads the project PDF and displays its filename and page count without opening a file chooser.
+- A question after loading returns extracted passages with the project PDF filename and PDF page references.
+- Removing the source stops its use for new questions; **Use project syllabus** restores it without another upload.
+- Replacing the source uses the selected file for the session. Refreshing restores the project PDF.
+- A failed project load shows a retry option and permits a manual PDF upload.
 
 ## User Scenarios & Testing *(mandatory)*
 

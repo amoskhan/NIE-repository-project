@@ -38,7 +38,7 @@ const ignoredSearchTerms = new Set([
 ]);
 
 function createUnavailableSourceResponse(): string {
-  return "This prototype is not connected to your school’s approved 2024 PE Syllabus source yet, so I cannot provide a verified syllabus answer or citation. Connect the approved source library to enable grounded answers with section references.";
+  return "No syllabus is currently loaded. Select ‘Use project syllabus’ or upload a PDF to search for passages with page references.";
 }
 
 function searchTerms(question: string): string[] {
@@ -95,12 +95,12 @@ function createSourceResponse(question: string, source: SyllabusSource): Pick<Ch
 
   if (matches.length === 0) {
     return {
-      text: "I could not find a clear matching passage in the uploaded syllabus. Try a more specific curriculum term, learning outcome, or movement skill.",
+      text: "I could not find a clear matching passage in the loaded syllabus. Try a more specific curriculum term, learning outcome, or movement skill.",
     };
   }
 
   return {
-    text: `I found these passages in the uploaded syllabus:\n\n${matches
+    text: `I found these passages in the loaded syllabus:\n\n${matches
       .map((page) => `“${excerptFromPage(page, terms)}”`)
       .join("\n\n")}`,
     citation: `${source.fileName} · ${matches.map((page) => `page ${page.pageNumber}`).join(" and ")}`,

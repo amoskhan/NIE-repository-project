@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { shallowRef } from "vue";
 
+const props = defineProps<{ disabled?: boolean }>();
+
 const emit = defineEmits<{
   send: [question: string];
 }>();
@@ -10,7 +12,7 @@ const question = shallowRef("");
 function submitQuestion(): void {
   const text = question.value.trim();
 
-  if (!text) {
+  if (!text || props.disabled) {
     return;
   }
 
@@ -31,7 +33,7 @@ function submitQuestion(): void {
         maxlength="1000"
         placeholder="For example: What should pupils learn about safe landing?"
       ></textarea>
-      <button class="send-button" type="submit" :disabled="!question.trim()">Send</button>
+      <button class="send-button" type="submit" :disabled="disabled || !question.trim()">Send</button>
     </div>
   </form>
 </template>
