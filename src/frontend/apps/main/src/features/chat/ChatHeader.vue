@@ -1,3 +1,9 @@
+<script setup lang="ts">
+defineProps<{
+  sourceLoaded: boolean;
+}>();
+</script>
+
 <template>
   <header class="chat-header">
     <div class="brand-mark" aria-hidden="true">PE</div>
@@ -5,9 +11,9 @@
       <p class="eyebrow">Aug1 · AI-assisted feedback ecosystem</p>
       <h1 class="title">PE Syllabus Assistant</h1>
     </div>
-    <p class="status" aria-label="Source library status">
+    <p class="status" :class="{ 'status--ready': sourceLoaded }" aria-label="Source library status">
       <span class="status-dot" aria-hidden="true"></span>
-      Demo mode
+      {{ sourceLoaded ? "Syllabus ready" : "Demo mode" }}
     </p>
   </header>
 </template>
@@ -67,5 +73,9 @@
   height: 0.55rem;
   border-radius: 50%;
   background: #d89c30;
+}
+
+.status--ready .status-dot {
+  background: #2d8a59;
 }
 </style>

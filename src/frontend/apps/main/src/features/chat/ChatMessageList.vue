@@ -18,6 +18,7 @@ defineProps<{
         {{ message.author === "assistant" ? "Assistant" : "You" }}
       </p>
       <p class="message-bubble">{{ message.text }}</p>
+      <p v-if="message.citation" class="message-citation">Source: {{ message.citation }}</p>
     </li>
   </ol>
 </template>
@@ -63,6 +64,15 @@ defineProps<{
   color: var(--ink);
   font-size: 0.95rem;
   line-height: 1.55;
+  white-space: pre-line;
+}
+
+.message-citation {
+  margin: 0.45rem 0 0;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 650;
+  line-height: 1.35;
 }
 
 .message-row--educator .message-bubble {

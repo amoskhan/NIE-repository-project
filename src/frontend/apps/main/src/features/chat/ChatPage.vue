@@ -2,7 +2,9 @@
 import ChatComposer from "./ChatComposer.vue";
 import ChatHeader from "./ChatHeader.vue";
 import ChatMessageList from "./ChatMessageList.vue";
+import SyllabusUpload from "./SyllabusUpload.vue";
 import { useChat } from "./useChat";
+import { useSyllabusSource } from "./useSyllabusSource";
 
 const prompts = [
   "What are the PE learning outcomes?",
@@ -10,7 +12,8 @@ const prompts = [
   "Where can I find FMS guidance?",
 ];
 
-const { messageCountLabel, messages, sendMessage } = useChat();
+const { error, isProcessing, progressLabel, removeSyllabus, source, uploadSyllabus } = useSyllabusSource();
+const { messageCountLabel, messages, sendMessage } = useChat(source);
 
 function askPrompt(prompt: string): void {
   sendMessage(prompt);
@@ -20,14 +23,26 @@ function askPrompt(prompt: string): void {
 <template>
   <main class="page-shell">
     <section class="chat-card" aria-labelledby="chat-title">
-      <ChatHeader />
+      <ChatHeader :source-loaded="Boolean(source)" />
 
       <div class="intro">
         <p id="chat-title" class="intro-title">Find grounded PE syllabus guidance</p>
-        <p class="intro-copy">
-          This starter chat keeps answers safe while a school-approved syllabus source is connected.
+        <p v-if="source" class="intro-copy">
+          Answers quote the uploaded PDF and show the matching page reference.
+        </p>
+        <p v-else class="intro-copy">
+          Upload the school-approved 2024 syllabus PDF to receive cited excerpts.
         </p>
       </div>
+
+      <SyllabusUpload
+        :error="error"
+        :is-processing="isProcessing"
+        :progress-label="progressLabel"
+        :source="source"
+        @remove="removeSyllabus"
+        @upload="uploadSyllabus"
+      />
 
       <div class="prompt-section" data-tour="syllabus-prompts">
         <p class="prompt-label">Try a question</p>

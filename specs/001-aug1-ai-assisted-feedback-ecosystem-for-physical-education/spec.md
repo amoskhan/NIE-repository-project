@@ -7,7 +7,7 @@
 
 ## Current Prototype Boundary
 
-The current implementation provides a local, browser-only syllabus-chat interface. It accepts questions, preserves the visible conversation during the session, and clearly declines to give a syllabus answer or citation until a school-approved 2024 syllabus source library is connected. It does not call an AI provider, store conversations, upload video, or present generated curriculum guidance as verified content.
+The current implementation provides a local, browser-only syllabus-chat interface. An educator can upload a text-based PDF of the approved 2024 syllabus; its text is read only in the current browser session and can be replaced or removed. The chat returns matching excerpts with PDF page references, or clearly states when no matching passage is found. It does not call an AI provider, store conversations or uploaded PDFs, upload video, or present generated curriculum guidance as verified content.
 
 ## User Scenarios & Testing *(mandatory)*
 
