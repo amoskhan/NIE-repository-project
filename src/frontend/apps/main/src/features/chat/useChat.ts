@@ -1,12 +1,11 @@
 import { computed, ref } from "vue";
-import type { Ref } from "vue";
 import type { ChatMessage, SyllabusPage, SyllabusSource } from "./types";
 
 const welcomeMessage: ChatMessage = {
   id: 1,
   author: "assistant",
   text:
-    "Hello! I am the PE Syllabus Assistant. Ask a question about the 2024 MOE PE Syllabus and I will help you find the right guidance.",
+    "Your 2024 PE Syllabus is already available. Ask me about learning outcomes, teaching guidance, or movement skills, and I’ll find relevant passages with page references.",
 };
 
 const ignoredSearchTerms = new Set([
@@ -36,10 +35,6 @@ const ignoredSearchTerms = new Set([
   "with",
   "would",
 ]);
-
-function createUnavailableSourceResponse(): string {
-  return "No syllabus is currently loaded. Select ‘Use project syllabus’ or upload a PDF to search for passages with page references.";
-}
 
 function searchTerms(question: string): string[] {
   return Array.from(
@@ -107,7 +102,7 @@ function createSourceResponse(question: string, source: SyllabusSource): Pick<Ch
   };
 }
 
-export function useChat(source: Readonly<Ref<SyllabusSource | null>>) {
+export function useChat(source: SyllabusSource) {
   const messages = ref<ChatMessage[]>([welcomeMessage]);
   const nextMessageId = ref(2);
 
@@ -127,9 +122,7 @@ export function useChat(source: Readonly<Ref<SyllabusSource | null>>) {
       author: "educator",
       text: trimmedQuestion,
     });
-    const response = source.value
-      ? createSourceResponse(trimmedQuestion, source.value)
-      : { text: createUnavailableSourceResponse() };
+    const response = createSourceResponse(trimmedQuestion, source);
 
     messages.value.push({
       id: nextMessageId.value++,

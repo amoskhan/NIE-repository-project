@@ -2,9 +2,8 @@
 import ChatComposer from "./ChatComposer.vue";
 import ChatHeader from "./ChatHeader.vue";
 import ChatMessageList from "./ChatMessageList.vue";
-import SyllabusUpload from "./SyllabusUpload.vue";
 import { useChat } from "./useChat";
-import { useSyllabusSource } from "./useSyllabusSource";
+import { projectSyllabus } from "./projectSyllabus";
 
 const prompts = [
   "What are the PE learning outcomes?",
@@ -12,39 +11,24 @@ const prompts = [
   "Where can I find FMS guidance?",
 ];
 
-const { error, isProcessing, progressLabel, loadProjectSyllabus, removeSyllabus, source, uploadSyllabus } = useSyllabusSource();
-const { messageCountLabel, messages, sendMessage } = useChat(source);
-
-function askPrompt(prompt: string): void {
-  if (isProcessing.value) return;
-  sendMessage(prompt);
-}
+const { messageCountLabel, messages, sendMessage } = useChat(projectSyllabus);
 </script>
 
 <template>
   <main class="page-shell">
     <section class="chat-card" aria-labelledby="chat-title">
-      <ChatHeader :source-loaded="Boolean(source)" />
+      <ChatHeader />
 
       <div class="intro">
-        <p id="chat-title" class="intro-title">Find grounded PE syllabus guidance</p>
-        <p v-if="source" class="intro-copy">
-          Search the loaded syllabus for excerpts with PDF page references.
+        <p id="chat-title" class="intro-title">Your 2024 PE Syllabus is ready</p>
+        <p class="intro-copy">
+          All {{ projectSyllabus.pageCount }} pages of the syllabus you provided are available.
+          Ask a question below to find relevant passages and page references.
         </p>
-        <p v-else class="intro-copy">
-          The 2024 syllabus from your project files loads automatically. You can also choose a different PDF.
-        </p>
+        <a class="source-link" :href="projectSyllabus.url" target="_blank" rel="noopener noreferrer">
+          View the 2024 PE Syllabus (PDF)
+        </a>
       </div>
-
-      <SyllabusUpload
-        :error="error"
-        :is-processing="isProcessing"
-        :progress-label="progressLabel"
-        :source="source"
-        @load-project="loadProjectSyllabus"
-        @remove="removeSyllabus"
-        @upload="uploadSyllabus"
-      />
 
       <div class="prompt-section" data-tour="syllabus-prompts">
         <p class="prompt-label">Try a question</p>
@@ -54,8 +38,7 @@ function askPrompt(prompt: string): void {
             :key="prompt"
             class="prompt-button"
             type="button"
-            :disabled="isProcessing"
-            @click="askPrompt(prompt)"
+            @click="sendMessage(prompt)"
           >
             {{ prompt }}
           </button>
@@ -64,7 +47,7 @@ function askPrompt(prompt: string): void {
 
       <ChatMessageList :messages="messages" />
       <p class="message-count">{{ messageCountLabel }}</p>
-      <ChatComposer :disabled="isProcessing" @send="askPrompt" />
+      <ChatComposer @send="sendMessage" />
     </section>
   </main>
 </template>
@@ -107,6 +90,14 @@ function askPrompt(prompt: string): void {
   color: var(--muted);
   font-size: 0.9rem;
   line-height: 1.45;
+}
+
+.source-link {
+  display: inline-block;
+  margin-top: 0.65rem;
+  color: var(--blue);
+  font-size: 0.85rem;
+  text-underline-offset: 0.2em;
 }
 
 .prompt-section {

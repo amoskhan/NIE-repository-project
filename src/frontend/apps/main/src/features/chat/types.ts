@@ -13,7 +13,7 @@ export interface SyllabusPage {
 }
 
 export interface SyllabusSource {
-  origin: "project" | "upload";
+  origin: "project";
   fileName: string;
   pageCount: number;
   pages: SyllabusPage[];

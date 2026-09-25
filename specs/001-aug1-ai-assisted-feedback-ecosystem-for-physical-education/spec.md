@@ -7,17 +7,17 @@
 
 ## Current Prototype Boundary
 
-The current implementation provides a browser-only syllabus-chat interface. On opening or refreshing the app, it automatically loads `upload/2024 Physical Education Primary Secondary and PreUniversity Syllabus (1).pdf` from the project as its default source. This specific PDF is included as an application asset; other project uploads are not exposed. The browser extracts its text and the chat returns matching excerpts with PDF page references, or states when no matching passage is found. Question submission is disabled while a document is loading.
+The current implementation provides a browser-only syllabus-chat interface with the supplied `upload/2024 Physical Education Primary Secondary and PreUniversity Syllabus (1).pdf` permanently connected. All 239 PDF pages are extracted by the development/build process and included with the app. The chatbot starts with the syllabus text already available: visitors do not select, upload, activate, replace, or remove a document. Browser PDF parsing and PDF worker support are not required to ask questions. A link opens the supplied PDF for reference; other project uploads are not exposed.
 
-An educator can replace the active source with a text-based PDF for the current session, remove the active source, or select **Use project syllabus** to restore it or retry a failed load. Removing a source does not delete the project file; refreshing loads the project syllabus again. Previously displayed chat messages keep their original source references. Local replacement PDFs and conversations are not persisted or sent to a server. The app does not call an AI provider, upload video, or present generated curriculum guidance as verified content.
+The chat returns matching excerpts with PDF page references, or states when no matching passage is found. Updating the project PDF regenerates the extracted content during development or the next build. A missing, unreadable, or empty PDF fails the build instead of shipping a chatbot that silently lacks its source. Conversations stay in memory for the session. The app does not call an AI provider, upload video, or present generated curriculum guidance as verified content.
 
 ### Project syllabus acceptance checks
 
-- Opening or refreshing the chatbot automatically loads the project PDF and displays its filename and page count without opening a file chooser.
-- A question after loading returns extracted passages with the project PDF filename and PDF page references.
-- Removing the source stops its use for new questions; **Use project syllabus** restores it without another upload.
-- Replacing the source uses the selected file for the session. Refreshing restores the project PDF.
-- A failed project load shows a retry option and permits a manual PDF upload.
+- Opening or refreshing the chatbot shows the syllabus as ready with its page count and no upload, source-selection, replace, or remove controls.
+- The first question immediately searches the included text and returns passages with the supplied PDF filename and page references.
+- Questions work even when PDF downloads or browser PDF workers are unavailable, since extraction occurs before the app reaches the browser.
+- The reference link opens the supplied PDF.
+- Both the live preview and production build include the extracted syllabus content.
 
 ## User Scenarios & Testing *(mandatory)*
 
