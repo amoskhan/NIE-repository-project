@@ -1,7 +1,8 @@
 import http from "node:http";
 import { pathToFileURL } from "node:url";
-import { AnswerError, createAnswerer } from "./answer.mjs";
-import { createRetriever, fileName, readSyllabus } from "./syllabus.mjs";
+import { AnswerError } from "./answer.mjs";
+import { fileName, readSyllabus } from "./syllabus.mjs";
+import { createLibraryAnswerer } from "./library.mjs";
 
 function json(res, status, value) {
   res.writeHead(status, { "Content-Type": "application/json", "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" });
@@ -13,8 +14,10 @@ export function createServer(answerer, pageCount) {
   return http.createServer(async (req, res) => {
     const pathname = new URL(req.url, "http://localhost").pathname;
     if (req.method === "GET" && pathname === "/health") {
-      return json(res, 200, { status: "ok", syllabusPages: pageCount, llmConfigured: answerer.configured });
+      return json(res, 200, { status: "ok", syllabusPages: pageCount, llmConfigured: answerer.configured,
+        answerAvailable: answerer.available ?? answerer.configured, answerMode: answerer.mode ?? "llm", answerCount: answerer.topics?.length ?? 0 });
     }
+    if (req.method === "GET" && pathname === "/topics") return json(res, 200, { topics: answerer.topics ?? [] });
     if (pathname !== "/chat") return json(res, 404, { message: "Not found." });
     if (req.method !== "POST") { res.setHeader("Allow", "POST"); return json(res, 405, { message: "Use POST." }); }
     if (req.headers["sec-fetch-site"] === "cross-site") return json(res, 403, { message: "Cross-site requests are not allowed." });
@@ -56,13 +59,7 @@ export function createServer(answerer, pageCount) {
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   try {
     const pages = await readSyllabus();
-    // Secrets are consumed only by this server and never returned, logged, or bundled for the browser.
-    const answerer = createAnswerer({
-      baseUrl: process.env.SYLLABUS_LLM_BASE_URL,
-      model: process.env.SYLLABUS_LLM_MODEL,
-      apiKey: process.env.SYLLABUS_LLM_API_KEY,
-      retrieve: createRetriever(pages),
-    });
+    const answerer = createLibraryAnswerer(pages);
     const server = createServer(answerer, pages.length);
     server.requestTimeout = 15000;
     server.headersTimeout = 10000;

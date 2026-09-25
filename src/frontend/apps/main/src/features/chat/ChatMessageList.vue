@@ -3,7 +3,10 @@ import type { ChatMessage } from "./types";
 
 defineProps<{
   messages: readonly ChatMessage[];
+  sourceUrl: string;
+  disabled: boolean;
 }>();
+defineEmits<{ ask: [question: string] }>();
 </script>
 
 <template>
@@ -21,10 +24,13 @@ defineProps<{
       <p v-if="message.citation" class="message-citation">Source: {{ message.citation }}</p>
       <details v-if="message.references?.length" class="source-evidence">
         <summary>Supporting syllabus text</summary>
-        <blockquote v-for="reference in message.references" :key="reference.pdfPage">
-          {{ reference.evidence }} — PDF page {{ reference.pdfPage }}
+        <blockquote v-for="reference in message.references" :key="`${reference.pdfPage}-${reference.evidence}`">
+          {{ reference.evidence }} — <a :href="`${sourceUrl}#page=${reference.pdfPage}`" target="_blank" rel="noopener noreferrer">PDF page {{ reference.pdfPage }}</a>
         </blockquote>
       </details>
+      <div v-if="message.suggestions?.length" class="suggestions" aria-label="Available questions">
+        <button v-for="question in message.suggestions" :key="question" type="button" :disabled="disabled" @click="$emit('ask', question)">{{ question }}</button>
+      </div>
     </li>
   </ol>
 </template>
@@ -91,4 +97,6 @@ defineProps<{
 .source-evidence { margin-top: 0.5rem; font-size: 0.8rem; color: var(--muted); }
 .source-evidence summary { cursor: pointer; }
 .source-evidence blockquote { margin: 0.65rem 0; padding-left: 0.8rem; border-left: 2px solid var(--border); line-height: 1.5; }
+.suggestions { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-top: 0.6rem; }
+.suggestions button { padding: 0.5rem; border: 1px solid var(--border); border-radius: 0.4rem; background: white; color: var(--blue); font: inherit; font-size: 0.8rem; cursor: pointer; }
 </style>

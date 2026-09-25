@@ -1,27 +1,25 @@
-# Syllabus LLM answers
+# Syllabus answers — no-key mode
 
-This Node service reads the supplied 2024 PE Syllabus directly from `upload/`, retrieves relevant complete pages, and calls an OpenAI-compatible Chat Completions model. It asks for a direct answer, typically 1–3 sentences, followed by verifiable page references. The UI keeps evidence quotations behind **Supporting syllabus text**.
+The running chatbot uses a **prepared syllabus answer library**, not live LLM inference. It needs no provider, model download, account, or API key. Provider settings are not consumed by the running service. The previous OpenAI-compatible adapter remains in `answer.mjs` with its regression tests, but is not wired into startup.
 
-## Enable live answers
+The 18 answers in `library.mjs` were written against the supplied 239-page PDF. Topics include kicking, 3v3 net-barrier and touch rules, safe landing, swimming, athletics, throwing/catching, dance, gymnastics, outdoor education, FMS, movement concepts, learning areas, camp, day trips, competitions, practice time, and personal health practice.
 
-In Ignite **Workspace Health → Syllabus LLM answers → Environment variables**, configure:
+Visitors can ask covered questions using common paraphrases or browse/search the available questions. Answers lead with a concise explanation and include printed/PDF page references. Exact supporting quotations are expandable, with links to the relevant PDF page. Unsupported or ambiguous requests receive an honest library-coverage message and suggested questions, not a claim that the PDF lacks the information. This is not open-ended AI, lesson-plan generation, or video assessment.
 
-- `SYLLABUS_LLM_BASE_URL`: your approved provider's API base, including `/v1` where applicable (for example `https://api.openai.com/v1`).
-- `SYLLABUS_LLM_MODEL`: the model identifier provisioned by that provider. It must support Chat Completions, `max_completion_tokens`, and JSON object output.
-- `SYLLABUS_LLM_API_KEY`: the server credential, entered directly in the protected runtime configuration, never in chat or repository files. An unauthenticated local provider can omit this setting.
+## Runtime
 
-Save the settings to restart this service. HTTPS is required except for a local loopback provider. No provider/model is silently selected, and no real credential is included in this repository. Configuration is consumed only by the server; it is never returned to the browser or logged. The service does not read credential files or agent authentication.
+- Existing service: `syllabus-chat-api`, display name **Syllabus answers**, port 15100.
+- Install: `pnpm install --frozen-lockfile`; start: `pnpm start`; tests: `pnpm test`.
+- `GET /health`: `answerAvailable: true`, `answerMode: "syllabus-library"`, `answerCount: 18`, `syllabusPages: 239`, and `llmConfigured: false`. False LLM configuration is expected and does not block library answers.
+- `GET /topics`: the browsable questions, with stable ids.
+- `POST /chat`: `{ "question": "When is kicking taught?", "history": [] }`; returns `supported`, `answer`, `citations`, `mode`, `suggestions`, and `fileName`.
+- The frontend uses the same-origin `~ignite/services/syllabus-chat-api/` route. Production hosting must route this to the backend and serve the supplied PDF asset. Workspace preview health does not itself establish external public deployment/access.
+- Requests retain JSON/body/history validation and concurrency limits. Questions and context are processed only in this backend; there are no external model requests, question logs, or server-side conversation storage. Browser conversation history lasts only for the session.
 
-Until configured, `/chat` returns HTTP 503 with `llm_not_configured`. `/health` returns process/syllabus health plus a non-secret `llmConfigured` flag; that flag indicates configuration exists, not that provider authentication or inference has been verified. There is no keyword-excerpt or hardcoded-answer fallback.
+## Maintaining the library
 
-## Runtime and verification
+The service checks the extracted document fingerprint and every quotation before serving. Changing the PDF requires reviewing the prepared answers and their citations, then updating the fingerprint in `library.mjs`. Do not update the fingerprint blindly. Restart the backend after library or PDF changes and rebuild the frontend for PDF asset changes.
 
-- Service id: `syllabus-chat-api`; port: `15100`; health: `/health`.
-- Install: `pnpm install --frozen-lockfile`; run: `pnpm start`; regression checks: `pnpm test`.
-- The frontend uses the same-origin semantic service URL `~ignite/services/syllabus-chat-api/chat`. The standalone Vite development server proxies this URL to port 15100. A production host must route this semantic URL to the backend too.
-- Requests are limited to 1,000 question characters, six history entries, and 16 KB; upstream calls time out after 45 seconds. Only the recent chat context and up to eight retrieved pages are sent to the configured provider.
-- Tests use the real supplied PDF and a clearly simulated provider response. They verify retrieval, API wiring, and citation checks; they are not evidence of successful live model inference.
-- Kicking acceptance case: `When do students learn kicking?` should produce a short answer identifying **Primary 2** based on PDF page **37**, printed page **33**. This must also be verified against the configured live model before declaring the integration operational.
-- Citation validation checks that referenced pages were supplied and supporting quotes occur there. It does not prove every generated interpretation is correct.
+Matching requires every meaningful query word to be recognised by the answer's aliases, a topic match, and an unambiguous best match. It is intentionally conservative. Add reviewed aliases to improve coverage; do not weaken matching to return answers to unrelated questions. Limited source/details follow-ups resolve the previous user question and do not trust assistant text as syllabus evidence.
 
-The provider protocol follows the [Chat Completions JSON output documentation](https://developers.openai.com/api/docs/guides/structured-outputs).
+Validation: `pnpm test` includes real-PDF citation and fingerprint checks, both user examples, all listed questions/aliases, unsupported queries, qualifications, and follow-ups. Legacy provider tests still simulate model output; no live model is claimed or needed for the library.

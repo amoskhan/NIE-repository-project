@@ -6,7 +6,10 @@ export interface ChatMessage {
   text: string;
   citation?: string;
   references?: { pdfPage: number; printedPage: string | null; evidence: string }[];
+  suggestions?: string[];
 }
+
+export interface SyllabusTopic { id: string; question: string }
 
 export interface SyllabusPage {
   pageNumber: number;

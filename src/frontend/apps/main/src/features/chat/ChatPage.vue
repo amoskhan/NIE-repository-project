@@ -2,16 +2,18 @@
 import ChatComposer from "./ChatComposer.vue";
 import ChatHeader from "./ChatHeader.vue";
 import ChatMessageList from "./ChatMessageList.vue";
+import ChatTopics from "./ChatTopics.vue";
 import { useChat } from "./useChat";
 import { projectSyllabus } from "./projectSyllabus";
 
 const prompts = [
   "When do students learn kicking?",
+  "When is 3v3 net-barrier taught?",
   "How can I teach safe landing?",
   "Where can I find FMS guidance?",
 ];
 
-const { messageCountLabel, messages, sendMessage, isAnswering, error, failedQuestion, connection, retry } = useChat(projectSyllabus);
+const { messageCountLabel, messages, sendMessage, isAnswering, error, failedQuestion, connection, retry, topics } = useChat(projectSyllabus);
 </script>
 
 <template>
@@ -22,18 +24,15 @@ const { messageCountLabel, messages, sendMessage, isAnswering, error, failedQues
       <div class="intro">
         <p id="chat-title" class="intro-title">Your 2024 PE Syllabus is ready</p>
         <p class="intro-copy">
-          All {{ projectSyllabus.pageCount }} pages of the syllabus you provided are available.
-          Ask a question below for a concise answer with syllabus page references.
+          Get concise, prepared answers grounded in the {{ projectSyllabus.pageCount }}-page syllabus.
+          No API key or upload needed. This question library has limited coverage and does not use live AI.
         </p>
         <a class="source-link" :href="projectSyllabus.url" target="_blank" rel="noopener noreferrer">
           View the 2024 PE Syllabus (PDF)
         </a>
       </div>
 
-      <p v-if="connection === 'not-configured'" class="connection-notice" role="status">
-        Your syllabus is ready. An administrator needs to connect the LLM service before generated answers are available.
-      </p>
-      <p v-else-if="connection === 'unavailable'" class="connection-notice" role="status">
+      <p v-if="connection === 'unavailable'" class="connection-notice" role="status">
         The answer service is currently unavailable. Please try again shortly.
       </p>
 
@@ -53,8 +52,9 @@ const { messageCountLabel, messages, sendMessage, isAnswering, error, failedQues
         </div>
       </div>
 
-      <ChatMessageList :messages="messages" />
-      <p v-if="isAnswering" class="answer-status" role="status">Reading the relevant syllabus sections and preparing your answer…</p>
+      <ChatTopics :topics="topics" :disabled="isAnswering" @ask="sendMessage" />
+      <ChatMessageList :messages="messages" :source-url="projectSyllabus.url" :disabled="isAnswering" @ask="sendMessage" />
+      <p v-if="isAnswering" class="answer-status" role="status">Finding your syllabus answer…</p>
       <div v-if="error" class="answer-error" role="alert">
         <p>{{ error }}</p>
         <button v-if="failedQuestion" type="button" @click="retry">Retry question</button>

@@ -22,7 +22,7 @@
     },
     {
       "id": "syllabus-chat-api",
-      "displayName": "Syllabus LLM answers",
+      "displayName": "Syllabus answers",
       "kind": "backend",
       "workingDirectory": "src/backend/Hosts/SyllabusChat",
       "command": ["node", "server.mjs"],
