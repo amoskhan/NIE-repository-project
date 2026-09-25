@@ -1,0 +1,81 @@
+{
+  "schemaVersion": 1,
+  "states": ["default", "empty", "error", "loading"],
+  "actors": [
+    { "id": "requester", "name": "Requester", "kind": "human", "roleCodes": ["Staff"], "capabilities": ["read", "create"] },
+    { "id": "reviewer", "name": "Reviewer", "kind": "human", "roleCodes": ["Approver"], "capabilities": ["read", "approve"] }
+  ],
+  "cases": [
+    {
+      "id": "benchmark-board", "name": "Project board", "layoutRecipe": "board", "actorIds": ["requester"],
+      "references": ["patterns/BoardReference.vue", "src/frontend/apps/main/src/staff/pages/procurement/VendorManagement.vue"],
+      "outcome": "Find the next piece of work and open its detail without mistaking repeated placeholder cards for real records.",
+      "mobile": "Lanes stack; record titles wrap; counts stay aligned; no clipped commands.",
+      "qualityChecks": [
+        { "name": "Open a distinct work item", "action": "click", "selector": "[data-preview-record-id='PF-42']", "expectSelector": "[data-benchmark-detail]", "expect": "text", "text": "Confirm the project metric dictionary" },
+        { "name": "Close item detail", "action": "click", "selector": "[data-benchmark-close]", "expectSelector": "[data-benchmark-detail]", "expect": "hidden" }
+      ]
+    },
+    {
+      "id": "benchmark-list", "name": "Supplier directory", "layoutRecipe": "table", "actorIds": ["requester"],
+      "references": ["src/frontend/apps/main/src/staff/pages/procurement/VendorManagement.vue"],
+      "outcome": "Find a supplier with a coherent search toolbar and truthful result count.",
+      "mobile": "An intentional labelled table scroller preserves columns; search and action remain visible.",
+      "qualityChecks": [
+        { "name": "Filter suppliers", "action": "fill", "selector": "[data-benchmark-search]", "value": "Horizon", "expectSelector": "[data-benchmark-result-count]", "expect": "text", "text": "1 supplier" },
+        { "name": "Clear supplier search", "action": "fill", "selector": "[data-benchmark-search]", "value": "", "expectSelector": "[data-benchmark-result-count]", "expect": "text", "text": "3 suppliers" }
+      ]
+    },
+    {
+      "id": "benchmark-form-detail", "name": "Purchase request", "layoutRecipe": "form", "actorIds": ["requester"],
+      "references": ["src/frontend/apps/main/src/staff/pages/procurement/NewPurchaseRequest.vue", "src/frontend/apps/main/src/staff/pages/procurement/PurchaseOrderDetail.vue"],
+      "outcome": "Complete grouped delivery details, see validation beside the field, and review a readable summary before submission.",
+      "mobile": "Two-column field groups stack; labels and summary values wrap; the review action remains reachable.",
+      "qualityChecks": [
+        { "name": "Require delivery location", "action": "click", "selector": "[data-benchmark-review]", "expectSelector": "[data-benchmark-validation]", "expect": "text", "text": "Enter a delivery location" },
+        { "name": "Enter long delivery location", "action": "fill", "selector": "[data-benchmark-delivery]", "value": "Learning Innovation Building, Level 4, accessible delivery entrance beside the resource centre", "expectSelector": "[data-benchmark-delivery]", "expect": "visible" },
+        { "name": "Review completed request", "action": "click", "selector": "[data-benchmark-review]", "expectSelector": "[data-benchmark-detail]", "expect": "text", "text": "Learning Innovation Building" },
+        { "name": "Return to request fields", "action": "click", "selector": "[data-benchmark-close]", "expectSelector": "[data-benchmark-detail]", "expect": "hidden" }
+      ]
+    },
+    {
+      "id": "benchmark-approval", "name": "Approval queue", "layoutRecipe": "approval", "actorIds": ["reviewer"],
+      "references": ["src/frontend/apps/main/src/staff/pages/procurement/ApprovalQueue.vue", "src/frontend/apps/main/src/staff/pages/procurement/PurchaseOrderDetail.vue"],
+      "outcome": "Inspect owner, value and requested items before confirming an approval and receiving clear local feedback.",
+      "mobile": "Identity, status and decision controls wrap into separate groups; confirmation fits the viewport.",
+      "qualityChecks": [
+        { "name": "Inspect approval before deciding", "action": "click", "selector": "[data-benchmark-approve='REQ-204']", "expectSelector": "[data-benchmark-confirmation]", "expect": "text", "text": "REQ-204" },
+        { "name": "Confirm one approval", "action": "click", "selector": "[data-benchmark-confirm]", "expectSelector": "[data-benchmark-receipt]", "expect": "text", "text": "REQ-204 approved" },
+        { "name": "Inspect another request", "action": "click", "selector": "[data-benchmark-approve='REQ-205']", "expectSelector": "[data-benchmark-confirmation]", "expect": "text", "text": "REQ-205" }
+      ]
+    }
+  ],
+  "sharedStateChecks": [
+    { "name": "Recover an error without leaving the screen", "state": "error", "action": "click", "selector": "[data-benchmark-retry]", "expectSelector": "[data-benchmark-content]", "expect": "visible" },
+    { "name": "Complete deterministic loading", "state": "loading", "action": "click", "selector": "[data-benchmark-finish-loading]", "expectSelector": "[data-benchmark-content]", "expect": "visible" },
+    { "name": "Recover from an empty state", "state": "empty", "action": "click", "selector": "[data-benchmark-populate]", "expectSelector": "[data-benchmark-content]", "expect": "visible" }
+  ],
+  "fixtures": {
+    "board": [
+      { "id": "todo", "title": "To do", "description": "Ready to start", "records": [
+        { "id": "PF-42", "title": "Confirm the project metric dictionary", "owner": "Amira Tan", "dueLabel": "Due 18 Sep", "priority": "High" },
+        { "id": "PF-43", "title": "Review accessibility findings for long labels and keyboard navigation", "owner": "Daniel Lim", "dueLabel": "Due 19 Sep", "priority": "Normal" }
+      ] },
+      { "id": "doing", "title": "Doing", "description": "Work in progress", "records": [
+        { "id": "PF-44", "title": "Prepare the learner feedback summary", "owner": "Priya Nair", "dueLabel": "Due 20 Sep", "priority": "Normal" }
+      ] },
+      { "id": "done", "title": "Done", "description": "Reviewed and complete", "records": [
+        { "id": "PF-45", "title": "Publish the workshop schedule", "owner": "Wei Jun", "dueLabel": "Completed 12 Sep", "priority": "Normal" }
+      ] }
+    ],
+    "suppliers": [
+      { "id": "VEN-101", "name": "Horizon Learning Resources", "category": "Learning materials", "contact": "support@horizon.example", "status": "Active" },
+      { "id": "VEN-102", "name": "National Classroom Equipment and Accessible Learning Technologies Cooperative", "category": "Equipment", "contact": "orders@classroom.example", "status": "Active" },
+      { "id": "VEN-103", "name": "Paper and Practice", "category": "Office supplies", "contact": "hello@practice.example", "status": "Under review" }
+    ],
+    "requests": [
+      { "id": "REQ-204", "title": "Portable workshop presentation equipment", "owner": "Amira Tan", "supplier": "Horizon Learning Resources", "value": "$1,240.00", "items": "4 portable displays", "date": "18 Sep 2026" },
+      { "id": "REQ-205", "title": "Accessible classroom resource kits for the extended orientation programme", "owner": "Priya Nair", "supplier": "National Classroom Equipment Cooperative", "value": "$860.00", "items": "12 resource kits", "date": "21 Sep 2026" }
+    ]
+  }
+}

@@ -1,13 +1,15 @@
 ---
-name: speckit-implement
-description: Apply NIE Ignite safety and validation gates during implementation.
-compatibility: Requires spec-kit project structure with .specify/ directory
+name: "speckit-implement"
+description: "Execute the implementation plan by processing and executing all tasks defined in tasks.md"
+argument-hint: "Optional implementation guidance or task filter"
+compatibility: "Requires spec-kit project structure with .specify/ directory"
 metadata:
-  author: github-spec-kit
-  source: preset:nie-ignite
+  author: "github-spec-kit"
+  source: "templates/commands/implement.md"
+user-invocable: true
+disable-model-invocation: false
 ---
 
-# Speckit Implement Skill
 
 ## User Input
 
@@ -27,7 +29,7 @@ You **MUST** consider the user input before proceeding (if not empty).
 - For each remaining hook, do **not** attempt to interpret or evaluate hook `condition` expressions:
   - If the hook has no `condition` field, or it is null/empty, treat the hook as executable
   - If the hook defines a non-empty `condition`, skip the hook and leave condition evaluation to the HookExecutor implementation
-- When constructing command invocations from hook command names, replace dots (`.`) with hyphens (`-`). For example, `speckit.git.commit` → `$speckit-git-commit`.
+- When constructing command invocations from hook command names, replace dots (`.`) with hyphens (`-`). For example, `speckit.git.commit` → `/speckit-git-commit`.
 - For each executable hook, output the following based on its `optional` flag:
   - **Optional hook** (`optional: true`):
     ```
@@ -175,7 +177,7 @@ You **MUST** consider the user input before proceeding (if not empty).
    - Validate that tests pass and coverage meets requirements
    - Confirm the implementation follows the technical plan
 
-Note: This command assumes a complete task breakdown exists in tasks.md. If tasks are incomplete or missing, suggest running `$speckit-tasks` first to regenerate the task list.
+Note: This command assumes a complete task breakdown exists in tasks.md. If tasks are incomplete or missing, suggest running `/speckit-tasks` first to regenerate the task list.
 
 ## Mandatory Post-Execution Hooks
 
@@ -189,7 +191,7 @@ Check if `.specify/extensions.yml` exists in the project root.
 - For each remaining hook, do **not** attempt to interpret or evaluate hook `condition` expressions:
   - If the hook has no `condition` field, or it is null/empty, treat the hook as executable
   - If the hook defines a non-empty `condition`, skip the hook and leave condition evaluation to the HookExecutor implementation
-- When constructing command invocations from hook command names, replace dots (`.`) with hyphens (`-`). For example, `speckit.git.commit` → `$speckit-git-commit`.
+- When constructing command invocations from hook command names, replace dots (`.`) with hyphens (`-`). For example, `speckit.git.commit` → `/speckit-git-commit`.
 - For each executable hook, output the following based on its `optional` flag:
   - **Mandatory hook** (`optional: false`) — **You MUST emit `EXECUTE_COMMAND:` for each mandatory hook**:
     ```
@@ -222,51 +224,3 @@ Report final status with summary of completed work.
 - [ ] Implementation validated against specification, plan, and test coverage
 - [ ] Extension hooks dispatched or skipped according to the rules in Mandatory Post-Execution Hooks above
 - [ ] Completion reported to user with summary of completed work
-
-
-
-## NIE Ignite implementation requirements
-
-- Work only in the current repository and active feature.
-- Treat the provisioned workspace as the complete NIE template baseline. Never
-  clone, pull, or fetch a second template repository and never invoke a
-  credential helper for template discovery.
-- Resolve the active assurance profile from `.ai/APPLICATION.md`,
-  `application-profile.md`, and `plan.md` before executing tasks. Stop on a
-  mismatch. Apply only the per-task and checkpoint checks due under that plan;
-  do not upgrade ordinary POC/Standard tasks to Enterprise by habit.
-- Recorded planning findings are advisory during implementation. A current Run
-  instruction supersedes historical FAIL/BLOCKED labels, stale readiness counts,
-  and generated prohibitions in `plan.md`, `contracts/README.md` or checklists.
-  For validation or contract promotion, run the relevant checks against current
-  sources and proceed when they pass; do not require another planning cycle
-  solely because of old prose. Repair only within the authorized task, preserve
-  actual product decisions and report concrete blockers with current evidence.
-- Process tasks in dependency order and mark a checkbox complete only after its
-  implementation and listed validation pass.
-- Use existing NIE shared patterns before adding abstractions. Preserve
-  authorization, audit, API, data, and UI contracts across layers.
-- POC runs the cheapest relevant compile/type/existing-test/direct-smoke proof
-  during each task and its consolidated happy-path/service-health checkpoint;
-  it does not add or run a new full test matrix per ordinary task. Standard
-  runs focused regressions per task and affected suites at story/release
-  checkpoints. Enterprise runs strict task tests and the plan's complete
-  affected validation set. Risk-escalated slices always use Enterprise depth.
-- Keep focused per-task evidence separate from broad story/release gates.
-  Command/configuration tasks prove changed wiring, required local tool
-  resolution and relevant behavior. Do not block them on unrelated unfinished
-  features or deployment-only checks, and never claim those future gates passed.
-  Preserve every required release/security gate and record current baseline
-  failures explicitly. Load only relevant artifact sections and repeat
-  validation only when changes invalidate its evidence.
-- Treat `ignite.services.json` as the staff workspace runtime contract. Add or
-  remove a manifest entry whenever a task adds or removes an independently
-  running frontend, backend, or worker. The workspace supplies supervision,
-  hot reload, health discovery, and preview routing from that file.
-- For "not running", preview, or runtime errors, inspect the runtime catalog,
-  supervisor state, and service logs first; reproduce, fix, and re-check every
-  required service rather than assuming the code edit started successfully.
-- Stop on a failed test, missing dependency, ambiguous destructive action, or
-  required external authorization. Leave the task unchecked and report the
-  evidence.
-- Do not commit, push, merge, publish, or deploy.
