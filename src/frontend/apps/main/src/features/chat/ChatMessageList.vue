@@ -19,6 +19,12 @@ defineProps<{
       </p>
       <p class="message-bubble">{{ message.text }}</p>
       <p v-if="message.citation" class="message-citation">Source: {{ message.citation }}</p>
+      <details v-if="message.references?.length" class="source-evidence">
+        <summary>Supporting syllabus text</summary>
+        <blockquote v-for="reference in message.references" :key="reference.pdfPage">
+          {{ reference.evidence }} — PDF page {{ reference.pdfPage }}
+        </blockquote>
+      </details>
     </li>
   </ol>
 </template>
@@ -81,4 +87,8 @@ defineProps<{
   background: var(--blue);
   color: #fff;
 }
+
+.source-evidence { margin-top: 0.5rem; font-size: 0.8rem; color: var(--muted); }
+.source-evidence summary { cursor: pointer; }
+.source-evidence blockquote { margin: 0.65rem 0; padding-left: 0.8rem; border-left: 2px solid var(--border); line-height: 1.5; }
 </style>

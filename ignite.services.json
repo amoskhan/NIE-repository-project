@@ -19,6 +19,16 @@
       "healthPath": "/",
       "primary": true,
       "required": true
+    },
+    {
+      "id": "syllabus-chat-api",
+      "displayName": "Syllabus LLM answers",
+      "kind": "backend",
+      "workingDirectory": "src/backend/Hosts/SyllabusChat",
+      "command": ["node", "server.mjs"],
+      "port": 15100,
+      "healthPath": "/health",
+      "required": true
     }
   ]
 }

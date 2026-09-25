@@ -5,6 +5,7 @@ export interface ChatMessage {
   author: MessageAuthor;
   text: string;
   citation?: string;
+  references?: { pdfPage: number; printedPage: string | null; evidence: string }[];
 }
 
 export interface SyllabusPage {

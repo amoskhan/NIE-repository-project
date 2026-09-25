@@ -6,12 +6,12 @@ import { useChat } from "./useChat";
 import { projectSyllabus } from "./projectSyllabus";
 
 const prompts = [
-  "What are the PE learning outcomes?",
+  "When do students learn kicking?",
   "How can I teach safe landing?",
   "Where can I find FMS guidance?",
 ];
 
-const { messageCountLabel, messages, sendMessage } = useChat(projectSyllabus);
+const { messageCountLabel, messages, sendMessage, isAnswering, error, failedQuestion, connection, retry } = useChat(projectSyllabus);
 </script>
 
 <template>
@@ -23,12 +23,19 @@ const { messageCountLabel, messages, sendMessage } = useChat(projectSyllabus);
         <p id="chat-title" class="intro-title">Your 2024 PE Syllabus is ready</p>
         <p class="intro-copy">
           All {{ projectSyllabus.pageCount }} pages of the syllabus you provided are available.
-          Ask a question below to find relevant passages and page references.
+          Ask a question below for a concise answer with syllabus page references.
         </p>
         <a class="source-link" :href="projectSyllabus.url" target="_blank" rel="noopener noreferrer">
           View the 2024 PE Syllabus (PDF)
         </a>
       </div>
+
+      <p v-if="connection === 'not-configured'" class="connection-notice" role="status">
+        Your syllabus is ready. An administrator needs to connect the LLM service before generated answers are available.
+      </p>
+      <p v-else-if="connection === 'unavailable'" class="connection-notice" role="status">
+        The answer service is currently unavailable. Please try again shortly.
+      </p>
 
       <div class="prompt-section" data-tour="syllabus-prompts">
         <p class="prompt-label">Try a question</p>
@@ -38,6 +45,7 @@ const { messageCountLabel, messages, sendMessage } = useChat(projectSyllabus);
             :key="prompt"
             class="prompt-button"
             type="button"
+            :disabled="isAnswering"
             @click="sendMessage(prompt)"
           >
             {{ prompt }}
@@ -46,8 +54,13 @@ const { messageCountLabel, messages, sendMessage } = useChat(projectSyllabus);
       </div>
 
       <ChatMessageList :messages="messages" />
+      <p v-if="isAnswering" class="answer-status" role="status">Reading the relevant syllabus sections and preparing your answer…</p>
+      <div v-if="error" class="answer-error" role="alert">
+        <p>{{ error }}</p>
+        <button v-if="failedQuestion" type="button" @click="retry">Retry question</button>
+      </div>
       <p class="message-count">{{ messageCountLabel }}</p>
-      <ChatComposer @send="sendMessage" />
+      <ChatComposer :disabled="isAnswering" @send="sendMessage" />
     </section>
   </main>
 </template>
@@ -99,6 +112,21 @@ const { messageCountLabel, messages, sendMessage } = useChat(projectSyllabus);
   font-size: 0.85rem;
   text-underline-offset: 0.2em;
 }
+
+.connection-notice, .answer-status, .answer-error {
+  margin: 0.6rem 1.5rem;
+  padding: 0.8rem;
+  border-radius: 0.6rem;
+  background: #f4f7fa;
+  color: var(--ink);
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+.answer-error { color: #912922; background: #fff2ef; }
+.answer-error p { margin: 0 0 0.5rem; }
+.answer-error button { padding: 0.5rem 0.75rem; cursor: pointer; }
+.prompt-button:disabled { opacity: 0.5; cursor: wait; }
 
 .prompt-section {
   padding: 0.6rem 1.5rem 0.3rem;

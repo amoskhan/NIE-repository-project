@@ -7,17 +7,25 @@
 
 ## Current Prototype Boundary
 
-The current implementation provides a browser-only syllabus-chat interface with the supplied `upload/2024 Physical Education Primary Secondary and PreUniversity Syllabus (1).pdf` permanently connected. All 239 PDF pages are extracted by the development/build process and included with the app. The chatbot starts with the syllabus text already available: visitors do not select, upload, activate, replace, or remove a document. Browser PDF parsing and PDF worker support are not required to ask questions. A link opens the supplied PDF for reference; other project uploads are not exposed.
+The current implementation provides a syllabus-chat interface with the supplied `upload/2024 Physical Education Primary Secondary and PreUniversity Syllabus (1).pdf` permanently connected. All 239 PDF pages are extracted by the development/build process and included with the app; the answer backend independently reads this same document. Visitors do not select, upload, activate, replace, or remove a document. Browser PDF parsing and PDF worker support are not required. A link opens the supplied PDF for reference; other project uploads are not exposed.
 
-The chat returns matching excerpts with PDF page references, or states when no matching passage is found. Updating the project PDF regenerates the extracted content during development or the next build. A missing, unreadable, or empty PDF fails the build instead of shipping a chatbot that silently lacks its source. Conversations stay in memory for the session. The app does not call an AI provider, upload video, or present generated curriculum guidance as verified content.
+The backend retrieves up to eight relevant pages, preserving school-level headings and syllabus context, and sends them with the question and limited recent conversation to a configured LLM. The LLM is instructed to give a direct answer, normally 1–3 sentences, using only that evidence. For questions about when a skill is first learned, it must distinguish explicit year-level learning outcomes from passing mentions and later progression. Supporting quotes are available on demand rather than displayed as the answer. Citations identify both PDF and printed page numbers where available, and the backend rejects references to pages not provided or quotations not present in their text. These checks do not guarantee that every model interpretation is correct.
+
+Live LLM inference requires an approved provider endpoint, model, and any server credential to be configured in the `syllabus-chat-api` service's protected runtime settings. The app currently has no provisioned provider in the checked-out configuration. Missing configuration, timeouts, or invalid model responses produce a clear error and retry action; they never silently fall back to generic excerpts or hardcoded answers. The frontend disables repeat submission and shows progress while waiting for a response. The backend is registered on port 15100 with `/health`; process health and LLM configuration status are reported separately. Automated provider tests use simulated responses and do not establish live model accuracy.
+
+Updating the project PDF regenerates the frontend content during development or the next build; restart the answer backend to reload its copy. A missing, unreadable, or empty PDF prevents the build/backend from starting. Conversations stay in browser memory for the session, with the most recent four messages sent as context per question. Questions, recent context, and selected syllabus pages are sent to the configured provider; the app does not log them or store them itself. Provider retention follows the selected provider configuration. The app does not upload or assess pupil videos in this prototype.
 
 ### Project syllabus acceptance checks
 
 - Opening or refreshing the chatbot shows the syllabus as ready with its page count and no upload, source-selection, replace, or remove controls.
-- The first question immediately searches the included text and returns passages with the supplied PDF filename and page references.
+- With an LLM configured, the first question returns a concise generated answer with supporting syllabus references. The answer is not a list of raw excerpts.
+- For **When do students learn kicking?**, the model should answer **Based on the syllabus, kicking is learnt in Primary 2**, supported by PDF page 37 (printed page 33). Verify this against the live model after provider configuration; do not hardcode it as a response.
+- A safe-landing question supplies the model with the full relevant technique guidance, including landing footnotes, rather than a truncated excerpt about apparatus heights.
+- Missing evidence produces an uncertainty statement or a focused follow-up without invented claims or citations.
+- Unsupported page references, fabricated quotes, provider failures, and missing LLM configuration are rejected or reported clearly. Retrying does not duplicate the user's message.
 - Questions work even when PDF downloads or browser PDF workers are unavailable, since extraction occurs before the app reaches the browser.
 - The reference link opens the supplied PDF.
-- Both the live preview and production build include the extracted syllabus content.
+- Both the live preview and production build include the extracted syllabus content and require the registered backend route for LLM answers.
 
 ## User Scenarios & Testing *(mandatory)*
 

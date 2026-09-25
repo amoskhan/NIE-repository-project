@@ -9,6 +9,12 @@ export default defineConfig({
     host: true,
     port: 18100,
     strictPort: true,
+    proxy: {
+      "/~ignite/services/syllabus-chat-api": {
+        target: "http://127.0.0.1:15100",
+        rewrite: (path) => path.replace(/^\/\~ignite\/services\/syllabus-chat-api/, ""),
+      },
+    },
     fs: {
       allow: [
         fileURLToPath(new URL(".", import.meta.url)),
