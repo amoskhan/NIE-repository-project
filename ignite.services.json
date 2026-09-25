@@ -3,7 +3,7 @@
   "template": "nie-template-current-layout",
   "services": [
     {
-      "id": "pe-chatbot-web",
+      "id": "preview-main",
       "displayName": "PE Syllabus chatbot",
       "kind": "frontend",
       "workingDirectory": "src/frontend/apps/main",
